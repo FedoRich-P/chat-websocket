@@ -10,7 +10,10 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
     cors: {
-        origin: '*',
+        origin: [
+            'https://chat-websocket-ashy.vercel.app',
+            'http://localhost:5173'
+        ],
         methods: ['GET', 'POST'],
     },
 } as Partial<ServerOptions>);
@@ -29,8 +32,8 @@ interface Message {
 const messages: Record<string, Message[]> = {}; // { roomId: Message[] }
 const users = new Map<string, { id: string; name: string; room: string }>();
 
-app.get('/api/messages', (req: Request<any, any, any, { room?: string }>, res: Response) => {
-    const room = req.query.room || 'general';
+app.get('/api/messages', (req: Request, res: Response) => {
+    const room = typeof req.query.room === 'string' ? req.query.room : 'general';
     res.json(messages[room] || []);
 });
 
@@ -63,7 +66,6 @@ io.on('connection', (socket: Socket) => {
         messages[room].push(joinMsg);
         io.to(room).emit('message', joinMsg);
 
-        // Только после отправляем обновлённый список пользователей
         emitUsers(room);
     });
 
@@ -86,7 +88,7 @@ io.on('connection', (socket: Socket) => {
             const leaveMsg: Message = {
                 id: `leave-${socket.id}-${Date.now()}`,
                 name: 'Система',
-                text: `${userName} покинул комнату`,
+                text: `${userName || 'Неизвестный пользователь'} покинул комнату`,
                 socketId: 'system',
                 roomId: user.room,
             };
