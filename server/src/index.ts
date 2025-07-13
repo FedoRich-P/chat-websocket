@@ -1,7 +1,7 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
-import { Server, Socket } from 'socket.io';
+import {Server, ServerOptions, Socket} from 'socket.io';
 
 const PORT = process.env.PORT || 5000;
 
@@ -10,13 +10,10 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
     cors: {
-        origin: [
-            'https://chat-websocket-ashy.vercel.app',
-            'http://localhost:5173'
-        ],
+        origin: '*',
         methods: ['GET', 'POST'],
     },
-});
+} as Partial<ServerOptions>);
 
 app.use(cors());
 app.use(express.json());
@@ -32,7 +29,7 @@ interface Message {
 const messages: Record<string, Message[]> = {}; // { roomId: Message[] }
 const users = new Map<string, { id: string; name: string; room: string }>();
 
-app.get('/api/messages', (req, res) => {
+app.get('/api/messages', (req: Request, res: Response) => {
     const room = (req.query.room as string) || 'general';
     res.json(messages[room] || []);
 });
