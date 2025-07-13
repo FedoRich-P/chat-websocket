@@ -29,10 +29,15 @@ interface Message {
 const messages: Record<string, Message[]> = {}; // { roomId: Message[] }
 const users = new Map<string, { id: string; name: string; room: string }>();
 
-(app.get as any)('/api/messages', (req: Request, res: Response) => {
-    const room: string = typeof req.query.room === 'string' ? req.query.room : 'general';
+app.get('/api/messages', (req: Request<any, any, any, { room?: string }>, res: Response) => {
+    const room = req.query.room || 'general';
     res.json(messages[room] || []);
 });
+
+// (app.get as any)('/api/messages', (req: Request, res: Response) => {
+//     const room: string = typeof req.query.room === 'string' ? req.query.room : 'general';
+//     res.json(messages[room] || []);
+// });
 
 io.on('connection', (socket: Socket) => {
     // Отправляем список пользователей сразу после подключения
