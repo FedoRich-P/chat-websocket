@@ -8,13 +8,23 @@ const PORT = process.env.PORT || 5000;
 const app = express();
 const httpServer = createServer(app);
 
+app.use(cors({
+    origin: [
+        "https://chat-websocket-mu.vercel.app",
+        "http://localhost:5173"
+    ],
+    methods: "GET,POST,PUT,DELETE",
+    credentials: true
+}));
+
 const io = new Server(httpServer, {
     cors: {
         origin: [
-            'https://chat-websocket-ashy.vercel.app',
+            'https://chat-websocket-mu.vercel.app/',
             'http://localhost:5173'
         ],
         methods: ['GET', 'POST'],
+        allowedHeaders: ["Content-Type"],
         credentials: true,
     },
 });
