@@ -20,7 +20,7 @@ app.use(cors({
 const io = new Server(httpServer, {
     cors: {
         origin: [
-            'https://chat-websocket-mu.vercel.app/',
+            'https://chat-websocket-beryl.vercel.app',
             'http://localhost:5173'
         ],
         methods: ['GET', 'POST'],
