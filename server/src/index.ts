@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
 import { Server, Socket } from 'socket.io';
@@ -39,7 +39,7 @@ interface User {
 const messages: Record<string, Message[]> = {}; // { roomId: Message[] }
 const users = new Map<string, User>();
 
-app.get('/api/messages', (req, res) => {
+app.get('/api/messages', (req: Request, res: Response) => {
     const room = (req.query.room as string) || 'general';
     res.json(messages[room] || []);
 });
