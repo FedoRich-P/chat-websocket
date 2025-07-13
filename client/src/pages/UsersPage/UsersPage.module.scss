@@ -1,0 +1,28 @@
+.usersPage {
+  padding: 20px;
+}
+
+.usersPage__title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.usersPage__list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.usersPage__item {
+  margin-bottom: 10px;
+}
+
+.usersPage__link {
+  text-decoration: none;
+  color: #007bff;
+  font-weight: bold;
+
+  &:hover {
+    color: #0056b3;
+  }
+}

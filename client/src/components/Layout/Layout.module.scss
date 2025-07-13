@@ -1,0 +1,28 @@
+.layout {
+  display: grid;
+  grid-template-rows: 75px 1fr;
+  grid-template-columns: 200px 1fr;
+  grid-template-areas:
+    "header header"
+    "sidebar main";
+  height: 100vh;
+  width: 100vw;
+  background-color: #fafafa;
+
+  &__sidebar {
+    grid-area: sidebar;
+    background-color: #f0f0f0;
+    border-right: 1px solid #ddd;
+    padding: 1rem;
+    overflow-y: auto;
+  }
+
+  &__main {
+    grid-area: main;
+    background: white;
+    padding: 2rem;
+    overflow-y: auto;
+    border-left: 1px solid #eee;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.02);
+  }
+}

@@ -1,0 +1,46 @@
+.header {
+  height: 75px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 2rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+
+  &__breadcrumbs {
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+    gap: 6px;
+  }
+
+  &__crumb {
+    display: flex;
+    align-items: center;
+  }
+
+  &__link {
+    width: max-content;
+    display: flex;
+    align-items: center;
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover {
+      color: #007bff;
+    }
+  }
+
+  &__separator {
+    margin: 0 6px;
+    color: #999;
+  }
+
+  &__icon {
+    margin-right: 4px;
+    display: flex;
+    align-items: center;
+  }
+}

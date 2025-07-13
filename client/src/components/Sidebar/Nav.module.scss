@@ -1,0 +1,19 @@
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  &__link {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+    &:hover {
+      background: #ddd;
+    }
+    &.active {
+      background: #0077ff;
+      color: white;
+    }
+  }
+}
