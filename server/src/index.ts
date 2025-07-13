@@ -30,7 +30,7 @@ const messages: Record<string, Message[]> = {}; // { roomId: Message[] }
 const users = new Map<string, { id: string; name: string; room: string }>();
 
 app.get('/api/messages', (req: Request, res: Response) => {
-    const room = (req.query.room as string) || 'general';
+    const room: string = typeof req.query.room === 'string' ? req.query.room : 'general';
     res.json(messages[room] || []);
 });
 
