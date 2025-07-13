@@ -9,4 +9,14 @@ export default defineConfig({
         react(),
         tailwindcss()
     ],
+    server: {
+        proxy: {
+            "/socket.io": {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-expect-error
+                target: import.meta.env.VITE_API_URL,
+                ws: true,
+            },
+        },
+    },
 })
