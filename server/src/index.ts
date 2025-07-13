@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
 import { Server, Socket } from 'socket.io';
@@ -36,61 +36,28 @@ interface User {
     room: string;
 }
 
-const messages: Record<string, Message[]> = {};
+const messages: Record<string, Message[]> = {}; // { roomId: Message[] }
 const users = new Map<string, User>();
 
-function emitUsersInRoom(room: string) {
-    const roomUsers = Array.from(users.values()).filter(u => u.room === room);
-    io.to(room).emit('users', roomUsers);
-    console.log(`Emitted users to room ${room}:`, roomUsers.map(u => u.name));
-}
-
-function handleUserLeave(socketId: string) {
-    const user = users.get(socketId);
-    if (user) {
-        users.delete(socketId);
-        emitUsersInRoom(user.room);
-
-        const leaveMsg: Message = {
-            id: `leave-${socketId}-${Date.now()}`,
-            name: 'System',
-            text: `${user.name} покинул комнату`,
-            socketId: 'system',
-            roomId: user.room,
-        };
-        if (!messages[user.room]) messages[user.room] = [];
-        messages[user.room].push(leaveMsg);
-        io.to(user.room).emit('message', leaveMsg);
-        console.log(`User ${user.name} (${socketId}) left room ${user.room}.`);
-    }
-}
-
-app.get('/api/messages', (req: Request, res: Response) => {
-    const room = typeof req.query.room === 'string' ? req.query.room : 'general';
+app.get('/api/messages', (req, res) => {
+    const room = (req.query.room as string) || 'general';
     res.json(messages[room] || []);
 });
 
 io.on('connection', (socket: Socket) => {
-    console.log(`Client connected: ${socket.id}`);
-
-    socket.on('requestUsersInRoom', (room: string) => {
-        console.log(`Client ${socket.id} requested users list for room ${room}.`);
+    // Отправляем список пользователей сразу после подключения
+    function emitUsers(room: string) {
         const roomUsers = Array.from(users.values()).filter(u => u.room === room);
-        socket.emit('users', roomUsers);
-    });
+        io.to(room).emit('users', roomUsers);
+    }
 
     socket.on('newUser', ({ name, room }: { name: string; room: string }) => {
-        const existingUser = users.get(socket.id);
-        if (existingUser && existingUser.room !== room) {
-            handleUserLeave(socket.id);
-        }
-
         users.set(socket.id, { id: socket.id, name, room });
         socket.join(room);
 
         const joinMsg: Message = {
             id: `join-${socket.id}-${Date.now()}`,
-            name: 'System',
+            name: 'Система',
             text: `${name} присоединился к комнате`,
             socketId: 'system',
             roomId: room,
@@ -100,8 +67,8 @@ io.on('connection', (socket: Socket) => {
         messages[room].push(joinMsg);
         io.to(room).emit('message', joinMsg);
 
-        emitUsersInRoom(room);
-        console.log(`User ${name} (${socket.id}) joined room ${room}.`);
+        // Только после отправляем обновлённый список пользователей
+        emitUsers(room);
     });
 
     socket.on('sendMessage', (msg: Message) => {
@@ -109,7 +76,6 @@ io.on('connection', (socket: Socket) => {
         if (!messages[roomId]) messages[roomId] = [];
         messages[roomId].push(msg);
         io.to(roomId).emit('message', msg);
-        console.log(`Message from ${msg.name} in room ${roomId}: ${msg.text}`);
     });
 
     socket.on('leaveChat', (data?: { name?: string }) => {
@@ -118,13 +84,13 @@ io.on('connection', (socket: Socket) => {
 
         if (user) {
             users.delete(socket.id);
-            socket.leave(user.room); // Вызов socket.leave() здесь
-            emitUsersInRoom(user.room);
+            socket.leave(user.room);
+            emitUsers(user.room);
 
             const leaveMsg: Message = {
                 id: `leave-${socket.id}-${Date.now()}`,
-                name: 'System',
-                text: `${userName || 'Неизвестный пользователь'} покинул комнату`,
+                name: 'Система',
+                text: `${userName} покинул комнату`,
                 socketId: 'system',
                 roomId: user.room,
             };
@@ -132,7 +98,6 @@ io.on('connection', (socket: Socket) => {
             if (!messages[user.room]) messages[user.room] = [];
             messages[user.room].push(leaveMsg);
             io.to(user.room).emit('message', leaveMsg);
-            console.log(`User ${userName || 'Неизвестный пользователь'} (${socket.id}) left room ${user.room}.`);
         }
     });
 
@@ -144,7 +109,7 @@ io.on('connection', (socket: Socket) => {
 
             const leaveMsg: Message = {
                 id: `leave-${socket.id}-${Date.now()}`,
-                name: 'System',
+                name: 'Система',
                 text: `${user.name} покинул комнату`,
                 socketId: 'system',
                 roomId: user.room,
@@ -154,14 +119,13 @@ io.on('connection', (socket: Socket) => {
             messages[user.room].push(leaveMsg);
             io.to(user.room).emit('message', leaveMsg);
 
-            emitUsersInRoom(user.room);
-            console.log(`Client disconnected: ${socket.id}`);
+            emitUsers(user.room); // вызываем после
         }
     });
 
     socket.on('getUsers', (room: string) => {
         const roomUsers = Array.from(users.values()).filter(u => u.room === room);
-        socket.emit('users', roomUsers);
+        socket.emit('users', roomUsers); // только этому сокету
     });
 });
 
