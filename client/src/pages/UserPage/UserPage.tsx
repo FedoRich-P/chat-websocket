@@ -1,4 +1,3 @@
-import styles from "./UserPage.module.scss";
 import {useNavigate} from "react-router";
 
 export const UserPage = () => {
@@ -6,10 +5,9 @@ export const UserPage = () => {
 
 
     return (
-        <div className={styles.userPage}>
-            <div className={styles.card}>
+        <div>
+            <div>
                 <button onClick={() => navigate(-1)}>Назад</button>
-
             </div>
         </div>
     );

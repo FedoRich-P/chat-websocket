@@ -3,7 +3,7 @@ import type {Message} from "../types.ts";
 
 export const chatApi = createApi({
     reducerPath: 'chatApi',
-    baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:5000/api/' }),
+    baseQuery: fetchBaseQuery({ baseUrl: `${import.meta.env.VITE_API_URL}/api/` }),
     endpoints: (builder) => ({
         getMessages: builder.query<Message[], string>({
             query: (roomId) => `messages?room=${roomId}`,
