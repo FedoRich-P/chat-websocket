@@ -52,7 +52,7 @@ export function CallPanel({ localUserId, remoteUserId, remoteUserName, socket }:
             {/* Кнопки управления */}
             <div className="flex flex-wrap justify-center gap-2 w-full mt-4 md:mt-0 md:col-span-2">
                 {/* Ответить */}
-                {incomingCall && !callActive && incomingCall.from === remoteUserId && (
+                {incomingCall && incomingCall.from === remoteUserId && !callActive && (
                     <button
                         onClick={acceptCall}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded transition"
@@ -62,7 +62,7 @@ export function CallPanel({ localUserId, remoteUserId, remoteUserName, socket }:
                 )}
 
                 {/* Позвонить */}
-                {remoteUserId && !callActive && (
+                {remoteUserId && !callActive && !incomingCall &&(
                     <button
                         onClick={startCall}
                         className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded transition"

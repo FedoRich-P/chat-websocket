@@ -6,7 +6,7 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
     const remoteVideo = useRef<HTMLVideoElement>(null);
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
     const localStreamRef = useRef<MediaStream | null>(null);
-    const [incomingCall, setIncomingCall] = useState<{ from: string; signal: any } | null>(null);
+    const [incomingCall, setIncomingCall] = useState<{ from: string; signal: RTCSessionDescriptionInit } | null>(null);
 
     async function createPeerConnection() {
         // Если поток уже захвачен, не запрашиваем его снова
@@ -80,8 +80,13 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
         if (remoteUserId) socket.emit("endCall", { to: remoteUserId });
     }
 
+    interface IncomingCallData {
+        from: string;
+        signal: RTCSessionDescriptionInit;
+    }
+
     useEffect(() => {
-        socket.on("incomingCall", ({ from, signal }) => setIncomingCall({ from, signal }));
+        socket.on("incomingCall", ({ from, signal }: IncomingCallData) => setIncomingCall({ from, signal }));
         socket.on("callAccepted", async signal => {
             if (peerConnectionRef.current) {
                 await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(signal));
