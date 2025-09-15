@@ -44,7 +44,6 @@ export function ChatMessageBlock() {
     function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
         if (message.trim()) {
-            // Фикс: убираем 'sender', чтобы соответствовало типу Message
             const newMsg: Message = {
                 id: `${socket.id}-${Date.now()}`,
                 name,

@@ -2,7 +2,7 @@ export interface Message {
     id: string;
     name: string;
     text: string;
-    socketId?: string;
+    socketId: string;
     roomId: string;
 }
 
