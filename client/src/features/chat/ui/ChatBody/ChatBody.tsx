@@ -5,7 +5,6 @@ interface Message {
     name: string | null;
     text: string;
     socketId?: string;
-    sender?: string;
     roomId?: string;
 }
 
@@ -31,7 +30,7 @@ export function ChatBody({ messages }: ChatBodyProps) {
                                 element.socketId === socket.id ? 'bg-green-100 text-gray-800' : 'bg-red-100 text-gray-800'
                             }`}
                         >
-                            <h5 className="font-bold text-sm mb-1">{element.name || element.sender}</h5>
+                            <h5 className="font-bold text-sm mb-1">{element.name}</h5>
                             <p className="text-base break-words">{element.text}</p>
                         </div>
                     </div>
