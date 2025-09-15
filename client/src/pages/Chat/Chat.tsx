@@ -1,9 +1,10 @@
 import {useSocket} from "../../shared";
-import {ChatMessageBlock, ChatSidebar} from "../../features/chat";
 import {useNavigate} from "react-router";
 import {PATH} from "../../app/paths.ts";
 import {clearMessages} from "../../entities";
 import {useDispatch} from "react-redux";
+import {ChatMessageBlock} from "../../widgets/ChatMessageBlock/ChatMessageBlock.tsx";
+import {ChatSidebar} from "../../widgets/ChatSidebar/ChatSidebar.tsx";
 
 export function Chat() {
     const navigate = useNavigate();
