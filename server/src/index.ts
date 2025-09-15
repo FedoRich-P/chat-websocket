@@ -1,14 +1,35 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
 import { Server, Socket } from 'socket.io';
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+
 const app = express();
 const httpServer = createServer(app);
 
-app.use(cors({ origin: ['http://localhost:5173'], credentials: true }));
+const allowedOrigins = [
+    'https://chat-websocket-beryl.vercel.app',
+    'http://localhost:5173'
+];
+
+// ✅ Настроенный CORS (только один вызов!)
+app.use(cors({
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+}));
+
 app.use(express.json());
+
+const io = new Server(httpServer, {
+    cors: {
+        origin: allowedOrigins,
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Content-Type"],
+        credentials: true,
+    },
+});
 
 interface Message {
     id: string;
@@ -17,6 +38,7 @@ interface Message {
     socketId: string;
     roomId: string;
 }
+
 interface User {
     id: string;
     name: string;
@@ -26,8 +48,9 @@ interface User {
 const messages: Record<string, Message[]> = {};
 const users = new Map<string, User>();
 
-const io = new Server(httpServer, {
-    cors: { origin: ['http://localhost:5173'], credentials: true },
+app.get('/api/messages', (req: Request, res: Response) => {
+    const room = (req.query.room as string) || 'general';
+    res.json(messages[room] || []);
 });
 
 io.on('connection', (socket: Socket) => {
@@ -47,61 +70,87 @@ io.on('connection', (socket: Socket) => {
             socketId: 'system',
             roomId: room,
         };
-        messages[room] = messages[room] || [];
+
+        if (!messages[room]) messages[room] = [];
         messages[room].push(joinMsg);
         io.to(room).emit('message', joinMsg);
+
         emitUsers(room);
     });
 
     socket.on('sendMessage', (msg: Message) => {
-        messages[msg.roomId] = messages[msg.roomId] || [];
-        messages[msg.roomId].push(msg);
-        io.to(msg.roomId).emit('message', msg);
+        const { roomId } = msg;
+        if (!messages[roomId]) messages[roomId] = [];
+        messages[roomId].push(msg);
+        io.to(roomId).emit('message', msg);
     });
 
-    socket.on('leaveChat', () => {
+    socket.on('leaveChat', (data?: { name?: string }) => {
         const user = users.get(socket.id);
-        if (!user) return;
-        users.delete(socket.id);
-        socket.leave(user.room);
+        const userName = user?.name || data?.name;
 
-        const leaveMsg: Message = {
-            id: `leave-${socket.id}-${Date.now()}`,
-            name: 'Система',
-            text: `${user.name} покинул комнату`,
-            socketId: 'system',
-            roomId: user.room,
-        };
-        messages[user.room] = messages[user.room] || [];
-        messages[user.room].push(leaveMsg);
-        io.to(user.room).emit('message', leaveMsg);
-        emitUsers(user.room);
-    });
+        if (user) {
+            users.delete(socket.id);
+            socket.leave(user.room);
+            emitUsers(user.room);
 
-    // VIDEO CALL
-    socket.on('callUser', ({ userToCall, signal, from }) => {
-        io.to(userToCall).emit('incomingCall', { signal, from });
-    });
-    socket.on('answerCall', ({ to, signal }) => {
-        io.to(to).emit('callAccepted', signal);
-    });
-    socket.on('iceCandidate', ({ to, candidate }) => {
-        io.to(to).emit('iceCandidate', candidate);
-    });
-    socket.on('endCall', ({ to }) => {
-        io.to(to).emit('callEnded');
+            const leaveMsg: Message = {
+                id: `leave-${socket.id}-${Date.now()}`,
+                name: 'Система',
+                text: `${userName} покинул комнату`,
+                socketId: 'system',
+                roomId: user.room,
+            };
+
+            if (!messages[user.room]) messages[user.room] = [];
+            messages[user.room].push(leaveMsg);
+            io.to(user.room).emit('message', leaveMsg);
+        }
     });
 
     socket.on('disconnect', () => {
         const user = users.get(socket.id);
-        if (!user) return;
-        users.delete(socket.id);
-        socket.leave(user.room);
-        emitUsers(user.room);
+        if (user) {
+            users.delete(socket.id);
+            socket.leave(user.room);
+
+            const leaveMsg: Message = {
+                id: `leave-${socket.id}-${Date.now()}`,
+                name: 'Система',
+                text: `${user.name} покинул комнату`,
+                socketId: 'system',
+                roomId: user.room,
+            };
+
+            if (!messages[user.room]) messages[user.room] = [];
+            messages[user.room].push(leaveMsg);
+            io.to(user.room).emit('message', leaveMsg);
+
+            emitUsers(user.room);
+        }
+    });
+
+    socket.on('getUsers', (room: string) => {
+        const roomUsers = Array.from(users.values()).filter(u => u.room === room);
+        socket.emit('users', roomUsers);
+    });
+
+    socket.on("callUser", ({ userToCall, signal, from, name }) => {
+        io.to(userToCall).emit("incomingCall", { signal, from, name });
+    });
+
+    socket.on("answerCall", ({ to, signal }) => {
+        io.to(to).emit("callAccepted", signal);
+    });
+
+    socket.on("iceCandidate", ({ to, candidate }) => {
+        io.to(to).emit("iceCandidate", candidate);
     });
 });
 
-httpServer.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+httpServer.listen(PORT, () => {
+    console.log(`✅ Server is running on port ${PORT}`);
+});
 
 
 
