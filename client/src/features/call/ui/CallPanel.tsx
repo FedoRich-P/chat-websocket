@@ -1,4 +1,3 @@
-import React from "react";
 import {useWebRTC} from "../model/useWebRTC.ts";
 
 interface CallPanelProps {
