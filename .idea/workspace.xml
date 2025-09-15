@@ -5,10 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d90a4a37-7322-4d35-bd30-c89f1aafaca2" name="Changes" comment="Ref">
-      <change beforePath="$PROJECT_DIR$/client/src/features/call/model/useWebRTC.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/call/model/useWebRTC.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/features/call/ui/CallPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/call/ui/CallPanel.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/features/chat/ui/ChatMessageBlock/ChatMessageBlock.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/chat/ui/ChatMessageBlock/ChatMessageBlock.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/index.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,6 +28,7 @@
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "main",
     "ignore_missing_gitignore": "true",
@@ -129,7 +128,7 @@
       <updated>1752318788026</updated>
       <workItem from="1752318789636" duration="1784000" />
       <workItem from="1752320656935" duration="24484000" />
-      <workItem from="1757949329327" duration="1535000" />
+      <workItem from="1757949329327" duration="1833000" />
     </task>
     <task id="LOCAL-00001" summary="Ref">
       <option name="closed" value="true" />
@@ -331,7 +330,23 @@
       <option name="project" value="LOCAL" />
       <updated>1757949867712</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="Ref">
+      <option name="closed" value="true" />
+      <created>1757950924665</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1757950924665</updated>
+    </task>
+    <task id="LOCAL-00027" summary="Ref">
+      <option name="closed" value="true" />
+      <created>1757951111247</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1757951111247</updated>
+    </task>
+    <option name="localTasksCounter" value="28" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

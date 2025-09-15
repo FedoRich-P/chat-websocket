@@ -19,12 +19,12 @@ export function CallPanel({ localUserId, room }: { localUserId: string; room: st
 
     useEffect(() => {
         if (!room) return;
-        socket.emit("getUsers", room);
 
         const handleUsers = (roomUsers: RoomUser[]) => {
             setUsers(roomUsers.filter((u: RoomUser) => u.id !== localUserId));
         };
 
+        socket.emit("getUsers", room);
         socket.on("users", handleUsers);
 
         return () => {
@@ -37,7 +37,10 @@ export function CallPanel({ localUserId, room }: { localUserId: string; room: st
             <video ref={localVideo} autoPlay playsInline muted className="w-1/2 border" />
             <video ref={remoteVideo} autoPlay playsInline className="w-1/2 border" />
 
-            <select onChange={(e) => setRemoteUserId(e.target.value)} className="border p-2 rounded">
+            <select
+                onChange={(e) => setRemoteUserId(e.target.value)}
+                className="border p-2 rounded"
+            >
                 <option value="">Выберите пользователя</option>
                 {users.map((u) => (
                     <option key={u.id} value={u.id}>
@@ -53,7 +56,10 @@ export function CallPanel({ localUserId, room }: { localUserId: string; room: st
             {incomingCall && (
                 <div className="mt-4 p-2 border rounded bg-yellow-100">
                     <p>Входящий звонок от {incomingCall.from}</p>
-                    <button onClick={acceptCall} className="bg-blue-500 text-white px-4 py-2 rounded mt-2">
+                    <button
+                        onClick={acceptCall}
+                        className="bg-blue-500 text-white px-4 py-2 rounded mt-2"
+                    >
                         ✅ Принять
                     </button>
                 </div>

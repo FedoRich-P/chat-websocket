@@ -12,19 +12,26 @@ export function ChatMessageBlock() {
     const socket = useSocket();
     const dispatch = useDispatch();
     const [message, setMessage] = useState("");
-    const { name, room } = useSelector((state: RootState) => state.user);
+    const { name, room: rawRoom } = useSelector((state: RootState) => state.user);
     const messages = useSelector((state: RootState) => state.messages.messages);
 
-    useGetMessagesQuery(room ?? "general", { refetchOnMountOrArgChange: true, skip: !room });
+    // гарантируем, что всегда строка
+    const room = rawRoom ?? "general";
+
+    useGetMessagesQuery(room, { refetchOnMountOrArgChange: true, skip: !room });
 
     useEffect(() => {
         const handler = (data: Message) => {
             dispatch(addMessage(data));
             const isSystem = data.name === "Система";
             const isJoinOrLeave = data.text.includes("присоединился") || data.text.includes("покинул");
-            if (isSystem && isJoinOrLeave) setTimeout(() => dispatch(removeMessage(data.id)), 5000);
+            if (isSystem && isJoinOrLeave) {
+                setTimeout(() => dispatch(removeMessage(data.id)), 5000);
+            }
         };
+
         socket.on("message", handler);
+
         return () => {
             socket.off("message", handler);
         };
@@ -48,17 +55,23 @@ export function ChatMessageBlock() {
 
     return (
         <div className="flex flex-col h-full">
-            {room && <CallPanel localUserId={socket.id} room={room} />}
+            <CallPanel localUserId={socket.id} room={room} />
             <ChatBody messages={messages} />
+
             <form onSubmit={handleSubmit} className="flex gap-3 p-2 mt-4">
                 <input
                     type="text"
                     value={message}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setMessage(e.target.value)}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setMessage(e.target.value)
+                    }
                     placeholder="Введите сообщение..."
                     className="flex-grow p-3 border border-gray-300 rounded-md"
                 />
-                <button type="submit" className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700">
+                <button
+                    type="submit"
+                    className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700"
+                >
                     Написать
                 </button>
             </form>
