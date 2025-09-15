@@ -1,69 +1,21 @@
-import { useEffect, useState } from "react";
-import { useWebRTC } from "../model/useWebRTC";
-import { useSocket } from "../../../shared";
-import type { User } from "../../../shared/types";
+import React from "react";
+import {useWebRTC} from "../model/useWebRTC.ts";
 
-export function CallPanel({ localUserId, room }: { localUserId: string; room: string }) {
-    const socket = useSocket();
-    const [users, setUsers] = useState<User[]>([]);
-    const [remoteUserId, setRemoteUserId] = useState<string | null>(null);
+interface CallPanelProps {
+    localUserId: string;
+    remoteUserId?: string;
+}
 
-    const { localVideo, remoteVideo, incomingCall, startCall, acceptCall, endCall } = useWebRTC(
-        localUserId,
-        remoteUserId || undefined
-    );
-
-    useEffect(() => {
-        if (!room) return;
-
-        socket.emit("getUsers", room);
-
-        const handleUsers = (roomUsers: User[]) => {
-            setUsers(roomUsers.filter((u: User) => u.id !== localUserId));
-        };
-
-        socket.on("users", handleUsers);
-
-        return () => {
-            socket.off("users", handleUsers);
-        };
-    }, [socket, room, localUserId]);
+export function CallPanel ({ localUserId, remoteUserId } : CallPanelProps) {
+    const { localVideo, remoteVideo, incomingCall, startCall, acceptCall, endCall } = useWebRTC(localUserId, remoteUserId);
 
     return (
-        <div className="p-4 border rounded-lg space-y-3">
-            <video ref={localVideo} autoPlay playsInline muted className="w-1/2 border" />
-            <video ref={remoteVideo} autoPlay playsInline className="w-1/2 border" />
-
-            <select
-                onChange={(e) => setRemoteUserId(e.target.value)}
-                className="border p-2 rounded"
-                value={remoteUserId || ""}
-            >
-                <option value="">Выберите пользователя</option>
-                {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                        {u.name}
-                    </option>
-                ))}
-            </select>
-
-            <div className="flex gap-2">
-                <button onClick={startCall} className="bg-green-500 text-white px-4 py-2 rounded">
-                    📞 Позвонить
-                </button>
-                <button onClick={endCall} className="bg-red-500 text-white px-4 py-2 rounded">
-                    🔴 Завершить
-                </button>
-            </div>
-
-            {incomingCall && (
-                <div className="mt-4 p-2 border rounded bg-yellow-100">
-                    <p>Входящий звонок от {incomingCall.from}</p>
-                    <button onClick={acceptCall} className="bg-blue-500 text-white px-4 py-2 rounded mt-2">
-                        ✅ Принять
-                    </button>
-                </div>
-            )}
+        <div className="flex gap-2 mb-2">
+            <video playsInline muted ref={localVideo} autoPlay className="w-40 h-40 bg-black" />
+            <video playsInline ref={remoteVideo} autoPlay className="w-40 h-40 bg-black" />
+            {incomingCall && <button onClick={acceptCall} className="bg-blue-600 text-white px-2">Ответить</button>}
+            <button onClick={startCall} className="bg-green-600 text-white px-2">Позвонить</button>
+            <button onClick={endCall} className="bg-red-600 text-white px-2">Завершить</button>
         </div>
     );
-}
+};

@@ -3,11 +3,11 @@ import { createServer } from 'http';
 import cors from 'cors';
 import { Server, Socket } from 'socket.io';
 
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
 const app = express();
 const httpServer = createServer(app);
 
-app.use(cors({ origin: "*", methods: ["GET", "POST"], credentials: true }));
+app.use(cors({ origin: ['http://localhost:5173'], credentials: true }));
 app.use(express.json());
 
 interface Message {
@@ -17,7 +17,6 @@ interface Message {
     socketId: string;
     roomId: string;
 }
-
 interface User {
     id: string;
     name: string;
@@ -27,12 +26,9 @@ interface User {
 const messages: Record<string, Message[]> = {};
 const users = new Map<string, User>();
 
-app.get('/api/messages', (req, res) => {
-    const room = (req.query.room as string) || 'general';
-    res.json(messages[room] || []);
+const io = new Server(httpServer, {
+    cors: { origin: ['http://localhost:5173'], credentials: true },
 });
-
-const io = new Server(httpServer, { cors: { origin: "*", methods: ["GET", "POST"] } });
 
 io.on('connection', (socket: Socket) => {
     function emitUsers(room: string) {
@@ -51,11 +47,9 @@ io.on('connection', (socket: Socket) => {
             socketId: 'system',
             roomId: room,
         };
-
         messages[room] = messages[room] || [];
         messages[room].push(joinMsg);
         io.to(room).emit('message', joinMsg);
-
         emitUsers(room);
     });
 
@@ -78,34 +72,24 @@ io.on('connection', (socket: Socket) => {
             socketId: 'system',
             roomId: user.room,
         };
-
         messages[user.room] = messages[user.room] || [];
         messages[user.room].push(leaveMsg);
         io.to(user.room).emit('message', leaveMsg);
-
         emitUsers(user.room);
     });
 
-    socket.on('getUsers', (room: string) => {
-        const roomUsers = Array.from(users.values()).filter(u => u.room === room);
-        socket.emit('users', roomUsers.filter(u => u.id !== socket.id));
+    // VIDEO CALL
+    socket.on('callUser', ({ userToCall, signal, from }) => {
+        io.to(userToCall).emit('incomingCall', { signal, from });
     });
-
-    // === VIDEO CALL EVENTS ===
-    socket.on("callUser", ({ userToCall, signal, from, name }) => {
-        io.to(userToCall).emit("incomingCall", { signal, from, name });
+    socket.on('answerCall', ({ to, signal }) => {
+        io.to(to).emit('callAccepted', signal);
     });
-
-    socket.on("answerCall", ({ to, signal }) => {
-        io.to(to).emit("callAccepted", signal);
+    socket.on('iceCandidate', ({ to, candidate }) => {
+        io.to(to).emit('iceCandidate', candidate);
     });
-
-    socket.on("iceCandidate", ({ to, candidate }) => {
-        io.to(to).emit("iceCandidate", candidate);
-    });
-
-    socket.on("endCall", ({ to }) => {
-        io.to(to).emit("callEnded");
+    socket.on('endCall', ({ to }) => {
+        io.to(to).emit('callEnded');
     });
 
     socket.on('disconnect', () => {
@@ -118,6 +102,8 @@ io.on('connection', (socket: Socket) => {
 });
 
 httpServer.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+
 
 
 

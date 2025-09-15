@@ -1,15 +1,6 @@
 import {createSlice, type PayloadAction} from "@reduxjs/toolkit";
 import type {Message} from "../../shared/types.ts";
 
-// interface Message {
-//     id: string;
-//     name: string | null;
-//     text: string;
-//     socketId?: string;
-//     sender?: string;
-//     roomId?: string;
-// }
-
 interface MessagesState {
     messages: Message[];
 }
