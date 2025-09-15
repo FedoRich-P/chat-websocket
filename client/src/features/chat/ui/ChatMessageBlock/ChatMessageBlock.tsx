@@ -5,7 +5,7 @@ import type {RootState} from "../../../../app/store.ts";
 import {type ChangeEvent, type FormEvent, useEffect, useState} from "react";
 import {useSocket} from "../../../../shared";
 import {addMessage, removeMessage} from "../../../../entities";
-import type {Message} from "../../../../shared/types.ts";
+import type {Message, User} from "../../../../shared/types.ts";
 import {CallPanel} from "../../../call/ui/CallPanel.tsx";
 import {ChatSidebar} from "../ChatSidebar/ChatSidebar.tsx";
 
@@ -129,7 +129,7 @@ export function ChatMessageBlock() {
         skip: !room,
     });
 
-    const [remoteUser, setRemoteUser] = useState(null);
+    const [remoteUser, setRemoteUser] = useState<User | null>(null);
 
     useEffect(() => {
         const handler = (data: Message) => {
@@ -168,7 +168,7 @@ export function ChatMessageBlock() {
     return (
         <div className="flex flex-col h-full">
             <ChatSidebar onSelectUser={(user) => setRemoteUser(user)} />
-            <CallPanel localUserId={socketId || ""} remoteUserId={remoteUser?.id} socket={socket} />
+            <CallPanel localUserId={socketId !} remoteUserId={remoteUser?.id} socket={socket} />
             <ChatBody messages={messages}/>
             <form onSubmit={handleSubmit} className="flex gap-3 p-2 mt-4">
                 <input

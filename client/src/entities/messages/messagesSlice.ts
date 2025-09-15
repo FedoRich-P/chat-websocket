@@ -1,7 +1,5 @@
-// src/entities/messagesSlice.ts
-
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { Message } from "../shared/types";
+import type {Message} from "../../shared/types.ts";
 
 interface MessagesState {
     messages: Message[];
