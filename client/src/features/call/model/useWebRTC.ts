@@ -4,35 +4,42 @@ import type { Socket } from "socket.io-client";
 export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: string) {
     const localVideo = useRef<HTMLVideoElement>(null);
     const remoteVideo = useRef<HTMLVideoElement>(null);
-    const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | null>(null);
+    const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+    const localStreamRef = useRef<MediaStream | null>(null);
     const [incomingCall, setIncomingCall] = useState<{ from: string; signal: any } | null>(null);
-    const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-
-    async function getMediaStream() {
-        if (localStream) return localStream; // не запрашиваем второй раз!
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        if (localVideo.current) localVideo.current.srcObject = stream;
-        setLocalStream(stream);
-        return stream;
-    }
 
     async function createPeerConnection() {
+        // Если поток уже захвачен, не запрашиваем его снова
+        let stream = localStreamRef.current;
+        if (!stream) {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localStreamRef.current = stream;
+                if (localVideo.current) localVideo.current.srcObject = stream;
+            } catch (err) {
+                console.error("Ошибка доступа к медиа:", err);
+                throw err;
+            }
+        }
+
         const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
 
-        pc.onicecandidate = (e) => {
+        // ICE кандидаты
+        pc.onicecandidate = e => {
             if (e.candidate && remoteUserId) {
                 socket.emit("iceCandidate", { to: remoteUserId, candidate: e.candidate });
             }
         };
 
-        pc.ontrack = (e) => {
+        // Удалённый поток
+        pc.ontrack = e => {
             if (remoteVideo.current) remoteVideo.current.srcObject = e.streams[0];
         };
 
-        const stream = await getMediaStream();
-        stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+        // Добавляем все треки из локального потока
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
-        setPeerConnection(pc);
+        peerConnectionRef.current = pc;
         return pc;
     }
 
@@ -55,48 +62,37 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
     }
 
     function endCall() {
-        peerConnection?.close();
-        setPeerConnection(null);
+        // Закрываем PeerConnection
+        peerConnectionRef.current?.close();
+        peerConnectionRef.current = null;
 
+        // Останавливаем все локальные треки
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(track => track.stop());
+            localStreamRef.current = null;
+        }
+
+        // Очищаем видео элементы
+        if (localVideo.current) localVideo.current.srcObject = null;
         if (remoteVideo.current) remoteVideo.current.srcObject = null;
 
-        if (localStream) {
-            localStream.getTracks().forEach((t) => t.stop());
-            setLocalStream(null);
-        }
-
-        if (remoteUserId) {
-            socket.emit("endCall", { to: remoteUserId });
-        }
+        // Отправляем сигнал о завершении звонка
+        if (remoteUserId) socket.emit("endCall", { to: remoteUserId });
     }
 
     useEffect(() => {
-        socket.on("incomingCall", (data) => {
-            // если звонок от себя же — игнорируем
-            if (data.from !== localUserId) {
-                setIncomingCall(data);
+        socket.on("incomingCall", ({ from, signal }) => setIncomingCall({ from, signal }));
+        socket.on("callAccepted", async signal => {
+            if (peerConnectionRef.current) {
+                await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(signal));
             }
         });
-
-        socket.on("callAccepted", async (signal) => {
-            if (peerConnection) {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
+        socket.on("iceCandidate", async candidate => {
+            if (peerConnectionRef.current) {
+                await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
             }
         });
-
-        socket.on("iceCandidate", async (candidate) => {
-            if (peerConnection) {
-                try {
-                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-                } catch (err) {
-                    console.error("Ошибка ICE:", err);
-                }
-            }
-        });
-
-        socket.on("callEnded", () => {
-            endCall();
-        });
+        socket.on("callEnded", () => endCall());
 
         return () => {
             socket.off("incomingCall");
@@ -104,7 +100,7 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
             socket.off("iceCandidate");
             socket.off("callEnded");
         };
-    }, [socket, peerConnection, localUserId]);
+    }, [socket, remoteUserId]);
 
     return { localVideo, remoteVideo, incomingCall, startCall, acceptCall, endCall };
 }
