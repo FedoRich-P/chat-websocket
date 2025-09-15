@@ -7,7 +7,6 @@ interface RoomUser {
     name: string;
 }
 
-// src/features/call/ui/CallPanel.tsx
 export function CallPanel({ localUserId, room }: { localUserId: string; room: string }) {
     const socket = useSocket();
     const [users, setUsers] = useState<RoomUser[]>([]);
@@ -22,7 +21,7 @@ export function CallPanel({ localUserId, room }: { localUserId: string; room: st
         if (!room) return;
 
         const handleUsers = (roomUsers: RoomUser[]) => {
-            setUsers(roomUsers.filter((u) => u.id !== localUserId));
+            setUsers(roomUsers.filter((u: RoomUser) => u.id !== localUserId));
         };
 
         socket.emit("getUsers", room);
@@ -73,4 +72,3 @@ export function CallPanel({ localUserId, room }: { localUserId: string; room: st
         </div>
     );
 }
-

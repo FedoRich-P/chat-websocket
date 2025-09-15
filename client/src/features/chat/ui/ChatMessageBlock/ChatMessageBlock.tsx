@@ -15,8 +15,8 @@ export function ChatMessageBlock() {
     const { name, room: rawRoom } = useSelector((state: RootState) => state.user);
     const messages = useSelector((state: RootState) => state.messages.messages);
 
-    // гарантируем, что всегда строка
-    const room = rawRoom ?? "general";
+    // всегда строка
+    const room: string = rawRoom ?? "general";
 
     useGetMessagesQuery(room, { refetchOnMountOrArgChange: true, skip: !room });
 
@@ -24,7 +24,8 @@ export function ChatMessageBlock() {
         const handler = (data: Message) => {
             dispatch(addMessage(data));
             const isSystem = data.name === "Система";
-            const isJoinOrLeave = data.text.includes("присоединился") || data.text.includes("покинул");
+            const isJoinOrLeave =
+                data.text.includes("присоединился") || data.text.includes("покинул");
             if (isSystem && isJoinOrLeave) {
                 setTimeout(() => dispatch(removeMessage(data.id)), 5000);
             }
@@ -57,14 +58,11 @@ export function ChatMessageBlock() {
         <div className="flex flex-col h-full">
             <CallPanel localUserId={socket.id} room={room} />
             <ChatBody messages={messages} />
-
             <form onSubmit={handleSubmit} className="flex gap-3 p-2 mt-4">
                 <input
                     type="text"
                     value={message}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                        setMessage(e.target.value)
-                    }
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setMessage(e.target.value)}
                     placeholder="Введите сообщение..."
                     className="flex-grow p-3 border border-gray-300 rounded-md"
                 />
