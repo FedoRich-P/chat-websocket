@@ -8,28 +8,29 @@ const PORT = process.env.PORT || 5000;
 const app = express();
 const httpServer = createServer(app);
 
-const allowedOrigins = [
-    'https://chat-websocket-beryl.vercel.app',
-    'http://localhost:5173'
-];
-
-// ✅ Настроенный CORS (только один вызов!)
 app.use(cors({
-    origin: allowedOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
+    origin: [
+        'https://chat-websocket-beryl.vercel.app',
+        "http://localhost:5173"
+    ],
+    methods: "GET,POST,PUT,DELETE",
+    credentials: true
 }));
-
-app.use(express.json());
 
 const io = new Server(httpServer, {
     cors: {
-        origin: allowedOrigins,
-        methods: ["GET", "POST"],
+        origin: [
+            'https://chat-websocket-beryl.vercel.app',
+            'http://localhost:5173'
+        ],
+        methods: ['GET', 'POST'],
         allowedHeaders: ["Content-Type"],
         credentials: true,
     },
 });
+
+app.use(cors());
+app.use(express.json());
 
 interface Message {
     id: string;
