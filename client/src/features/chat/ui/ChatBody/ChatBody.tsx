@@ -1,12 +1,13 @@
 import {useSocket} from "../../../../shared";
+import type {Message} from "../../../../shared/types.ts";
 
-interface Message {
-    id: string;
-    name: string | null;
-    text: string;
-    socketId?: string;
-    roomId?: string;
-}
+// interface Message {
+//     id: string;
+//     name: string | null;
+//     text: string;
+//     socketId?: string;
+//     roomId?: string;
+// }
 
 interface ChatBodyProps {
     messages: Message[];
