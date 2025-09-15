@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useWebRTC } from "../model/useWebRTC";
 import { useSocket } from "../../../shared";
-import type {User} from "../../../shared/types.ts";
+import type { User } from "../../../shared/types";
 
 export function CallPanel({ localUserId, room }: { localUserId: string; room: string }) {
     const socket = useSocket();
@@ -34,7 +34,11 @@ export function CallPanel({ localUserId, room }: { localUserId: string; room: st
             <video ref={localVideo} autoPlay playsInline muted className="w-1/2 border" />
             <video ref={remoteVideo} autoPlay playsInline className="w-1/2 border" />
 
-            <select onChange={(e) => setRemoteUserId(e.target.value)} className="border p-2 rounded">
+            <select
+                onChange={(e) => setRemoteUserId(e.target.value)}
+                className="border p-2 rounded"
+                value={remoteUserId || ""}
+            >
                 <option value="">Выберите пользователя</option>
                 {users.map((u) => (
                     <option key={u.id} value={u.id}>

@@ -12,16 +12,13 @@ export function ChatMessageBlock() {
     const socket = useSocket();
     const dispatch = useDispatch();
     const [message, setMessage] = useState("");
-    // const { name, room: rawRoom } = useSelector((state: RootState) => state.user);
+
     const rawName = useSelector((state: RootState) => state.user.name);
     const rawRoom = useSelector((state: RootState) => state.user.room);
     const messages = useSelector((state: RootState) => state.messages.messages);
 
     const name: string = rawName ?? "Гость";
     const room: string = rawRoom ?? "general";
-
-    // всегда строка
-    // const room: string = rawRoom ?? "general";
 
     useGetMessagesQuery(room, { refetchOnMountOrArgChange: true, skip: !room });
 
