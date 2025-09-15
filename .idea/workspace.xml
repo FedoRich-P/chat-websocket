@@ -5,9 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d90a4a37-7322-4d35-bd30-c89f1aafaca2" name="Changes" comment="Ref">
+      <change afterPath="$PROJECT_DIR$/client/src/shared/socket.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/entities/messages/messagesSlice.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/entities/messages/messagesSlice.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/entities/user/userSlice.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/entities/user/userSlice.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/features/call/model/useWebRTC.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/call/model/useWebRTC.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/features/call/ui/CallPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/call/ui/CallPanel.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/features/chat/ui/ChatBody/ChatBody.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/chat/ui/ChatBody/ChatBody.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/features/chat/ui/ChatMessageBlock/ChatMessageBlock.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/chat/ui/ChatMessageBlock/ChatMessageBlock.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/features/chat/ui/ChatSidebar/ChatSidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/chat/ui/ChatSidebar/ChatSidebar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/pages/Home/Home.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/pages/Home/Home.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/shared/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/shared/types.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -129,7 +136,7 @@
       <updated>1752318788026</updated>
       <workItem from="1752318789636" duration="1784000" />
       <workItem from="1752320656935" duration="24484000" />
-      <workItem from="1757949329327" duration="8750000" />
+      <workItem from="1757949329327" duration="10813000" />
     </task>
     <task id="LOCAL-00001" summary="Ref">
       <option name="closed" value="true" />
@@ -467,7 +474,15 @@
       <option name="project" value="LOCAL" />
       <updated>1757957767316</updated>
     </task>
-    <option name="localTasksCounter" value="43" />
+    <task id="LOCAL-00043" summary="Ref">
+      <option name="closed" value="true" />
+      <created>1757958384295</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1757958384295</updated>
+    </task>
+    <option name="localTasksCounter" value="44" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
