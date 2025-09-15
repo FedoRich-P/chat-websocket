@@ -1,5 +1,5 @@
-import type { Socket } from "socket.io-client";
-import { useWebRTC } from "../model/useWebRTC";
+import type {Socket} from "socket.io-client";
+import {useWebRTC} from "../model/useWebRTC";
 
 
 interface Props {
@@ -8,7 +8,7 @@ interface Props {
     socket: Socket;
 }
 
-export function CallPanel({ localUserId, remoteUserId, socket }: Props) {
+export function CallPanel({localUserId, remoteUserId, socket}: Props) {
     const {
         localVideo,
         remoteVideo,
@@ -21,20 +21,22 @@ export function CallPanel({ localUserId, remoteUserId, socket }: Props) {
     return (
         <div className="flex gap-2 mb-2 items-center">
             {/* Локальное видео */}
-            <video
-                ref={localVideo}
-                autoPlay
-                muted
-                playsInline
-                className="w-40 h-40 bg-black rounded"
-            />
-            {/* Удалённое видео */}
-            <video
-                ref={remoteVideo}
-                autoPlay
-                playsInline
-                className="w-40 h-40 bg-black rounded"
-            />
+            <div>
+                <video
+                    ref={localVideo}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-40 h-40 bg-black rounded"
+                />
+                {/* Удалённое видео */}
+                <video
+                    ref={remoteVideo}
+                    autoPlay
+                    playsInline
+                    className="w-40 h-40 bg-black rounded"
+                />
+            </div>
 
             {/* Панель управления */}
             <div className="flex flex-col gap-2">
@@ -69,8 +71,6 @@ export function CallPanel({ localUserId, remoteUserId, socket }: Props) {
         </div>
     );
 }
-
-
 
 
 // import {useWebRTC} from "../model/useWebRTC.ts";
