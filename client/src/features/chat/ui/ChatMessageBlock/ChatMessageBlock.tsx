@@ -17,6 +17,7 @@ export function ChatMessageBlock() {
     const rawRoom = useSelector((state: RootState) => state.user.room);
     const messages = useSelector((state: RootState) => state.messages.messages);
 
+    // Фикс: всегда строка
     const name: string = rawName ?? "Гость";
     const room: string = rawRoom ?? "general";
 
@@ -43,6 +44,7 @@ export function ChatMessageBlock() {
     function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
         if (message.trim()) {
+            // Фикс: убираем 'sender', чтобы соответствовало типу Message
             const newMsg: Message = {
                 id: `${socket.id}-${Date.now()}`,
                 name,
