@@ -7,12 +7,13 @@ interface RoomUser {
     name: string;
 }
 
+// src/features/call/ui/CallPanel.tsx
 export function CallPanel({ localUserId, room }: { localUserId: string; room: string }) {
     const socket = useSocket();
     const [users, setUsers] = useState<RoomUser[]>([]);
     const [remoteUserId, setRemoteUserId] = useState<string | null>(null);
 
-    const { localVideo, remoteVideo, incomingCall, startCall, acceptCall } = useWebRTC(
+    const { localVideo, remoteVideo, incomingCall, startCall, acceptCall, endCall } = useWebRTC(
         localUserId,
         remoteUserId || undefined
     );
@@ -21,7 +22,7 @@ export function CallPanel({ localUserId, room }: { localUserId: string; room: st
         if (!room) return;
 
         const handleUsers = (roomUsers: RoomUser[]) => {
-            setUsers(roomUsers.filter((u: RoomUser) => u.id !== localUserId));
+            setUsers(roomUsers.filter((u) => u.id !== localUserId));
         };
 
         socket.emit("getUsers", room);
@@ -49,9 +50,14 @@ export function CallPanel({ localUserId, room }: { localUserId: string; room: st
                 ))}
             </select>
 
-            <button onClick={startCall} className="bg-green-500 text-white px-4 py-2 rounded">
-                📞 Позвонить
-            </button>
+            <div className="flex gap-2">
+                <button onClick={startCall} className="bg-green-500 text-white px-4 py-2 rounded">
+                    📞 Позвонить
+                </button>
+                <button onClick={endCall} className="bg-red-500 text-white px-4 py-2 rounded">
+                    🔴 Завершить
+                </button>
+            </div>
 
             {incomingCall && (
                 <div className="mt-4 p-2 border rounded bg-yellow-100">
@@ -67,3 +73,4 @@ export function CallPanel({ localUserId, room }: { localUserId: string; room: st
         </div>
     );
 }
+
