@@ -1,13 +1,29 @@
-import {useWebRTC} from "../model/useWebRTC.ts";
+import { useState, useEffect } from "react";
+import { useWebRTC } from "../model/useWebRTC";
+import { useSocket } from "../../../shared";
 
+export function CallPanel({ localUserId, room }: { localUserId: string, room: string }) {
+    const socket = useSocket();
+    const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
+    const [remoteUserId, setRemoteUserId] = useState<string | null>(null);
 
-export function CallPanel({ remoteUserId }: { remoteUserId: string }) {
-    const { localVideo, remoteVideo, incomingCall, startCall, acceptCall } = useWebRTC("me", remoteUserId);
+    const { localVideo, remoteVideo, incomingCall, startCall, acceptCall } = useWebRTC(localUserId, remoteUserId || undefined);
+
+    useEffect(() => {
+        socket.emit("getUsers", room);
+        socket.on("users", (roomUsers) => setUsers(roomUsers.filter(u => u.id !== localUserId)));
+        return () => socket.off("users");
+    }, [socket, room, localUserId]);
 
     return (
         <div className="p-4 border rounded-lg space-y-3">
             <video ref={localVideo} autoPlay playsInline muted className="w-1/2 border" />
             <video ref={remoteVideo} autoPlay playsInline className="w-1/2 border" />
+
+            <select onChange={e => setRemoteUserId(e.target.value)} className="border p-2 rounded">
+                <option value="">Выберите пользователя</option>
+                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
 
             <button onClick={startCall} className="bg-green-500 text-white px-4 py-2 rounded">
                 📞 Позвонить

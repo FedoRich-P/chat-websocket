@@ -5,9 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d90a4a37-7322-4d35-bd30-c89f1aafaca2" name="Changes" comment="Ref">
-      <change afterPath="$PROJECT_DIR$/client/src/features/call/model/useWebRTC.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/client/src/features/call/ui/CallPanel.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/features/call/model/useWebRTC.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/call/model/useWebRTC.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/features/call/ui/CallPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/call/ui/CallPanel.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/features/chat/ui/ChatMessageBlock/ChatMessageBlock.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/chat/ui/ChatMessageBlock/ChatMessageBlock.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/server/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/index.ts" afterDir="false" />
     </list>
@@ -52,12 +51,14 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\WORK\chat\chat-websocket\client\src\features\call" />
+      <recent name="D:\WORK\chat\chat-websocket\client\src\features" />
       <recent name="D:\reactify\youtube\chat\client\src\features\chat\ui" />
       <recent name="D:\reactify\youtube\chat\client\src\pages\Chat\components" />
       <recent name="D:\reactify\youtube\chat\client\src\pages" />
-      <recent name="D:\reactify\youtube\chat\client\src\components" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\WORK\chat\chat-websocket\client\src\features\call\ui" />
       <recent name="D:\reactify\youtube\chat\client\src\shared\lib" />
       <recent name="D:\reactify\youtube\chat\client\src\shared" />
     </key>
@@ -128,7 +129,7 @@
       <updated>1752318788026</updated>
       <workItem from="1752318789636" duration="1784000" />
       <workItem from="1752320656935" duration="24484000" />
-      <workItem from="1757949329327" duration="404000" />
+      <workItem from="1757949329327" duration="1535000" />
     </task>
     <task id="LOCAL-00001" summary="Ref">
       <option name="closed" value="true" />
@@ -314,7 +315,23 @@
       <option name="project" value="LOCAL" />
       <updated>1752403401529</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="Ref">
+      <option name="closed" value="true" />
+      <created>1757949754555</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1757949754555</updated>
+    </task>
+    <task id="LOCAL-00025" summary="Ref">
+      <option name="closed" value="true" />
+      <created>1757949867712</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1757949867712</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
