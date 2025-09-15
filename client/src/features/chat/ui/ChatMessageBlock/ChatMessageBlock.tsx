@@ -18,8 +18,8 @@ export function ChatMessageBlock() {
     const messages = useSelector((state: RootState) => state.messages.messages);
 
     // Фикс: всегда строка
-    const name: string = rawName ?? "Гость";
-    const room: string = rawRoom ?? "general";
+     const name: string = String(rawName ?? "Гость");
+     const room: string = String(rawRoom ?? "general");
 
     useGetMessagesQuery(room, { refetchOnMountOrArgChange: true, skip: !room });
 
