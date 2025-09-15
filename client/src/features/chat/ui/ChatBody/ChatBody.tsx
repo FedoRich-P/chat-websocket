@@ -1,13 +1,15 @@
 import type {Message} from "../../../../shared/types.ts";
-import {getSocket} from "../../../../shared/socket.ts";
+import {useSocket} from "../../../../shared";
+import {useSelector} from "react-redux";
+import type {RootState} from "../../../../app/store.ts";
 
 interface ChatBodyProps {
     messages: Message[];
 }
 
 export function ChatBody({ messages }: ChatBodyProps) {
-    const socket = getSocket();
-    const mySocketId = socket.id;
+    const socket = useSocket();
+    const mySocketId = useSelector((s: RootState) => s.user.socketId) || socket.id;
 
     return (
         <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white rounded-lg shadow-inner border border-gray-200">
@@ -17,15 +19,11 @@ export function ChatBody({ messages }: ChatBodyProps) {
                 messages.map((element) => (
                     <div
                         key={element.id}
-                        className={`flex ${
-                            element.socketId === mySocketId ? "justify-end" : "justify-start"
-                        }`}
+                        className={`flex ${element.socketId === mySocketId ? "justify-end" : "justify-start"}`}
                     >
                         <div
                             className={`max-w-[70%] p-3 rounded-lg shadow-sm ${
-                                element.socketId === mySocketId
-                                    ? "bg-green-100 text-gray-800"
-                                    : "bg-red-100 text-gray-800"
+                                element.socketId === mySocketId ? "bg-green-100 text-gray-800" : "bg-red-100 text-gray-800"
                             }`}
                         >
                             <h5 className="font-bold text-sm mb-1">{element.name || element.sender}</h5>

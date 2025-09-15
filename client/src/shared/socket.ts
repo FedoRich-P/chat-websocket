@@ -1,12 +1,19 @@
-import { io, Socket } from "socket.io-client";
+import { io, type Socket } from "socket.io-client";
 
-const SERVER_URL = "http://localhost:5000";
+const SERVER_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-let socket: Socket | null = null;
+let socketInstance: Socket | null = null;
+
+export function initSocket(): Socket {
+    if (!socketInstance) {
+        socketInstance = io(SERVER_URL, {
+            transports: ["websocket"],
+            autoConnect: true,
+        });
+    }
+    return socketInstance;
+}
 
 export function getSocket(): Socket {
-    if (!socket) {
-        socket = io(SERVER_URL);
-    }
-    return socket;
+    return initSocket();
 }

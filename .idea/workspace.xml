@@ -5,9 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d90a4a37-7322-4d35-bd30-c89f1aafaca2" name="Changes" comment="Ref">
-      <change beforePath="$PROJECT_DIR$/client/src/entities/messages/messagesSlice.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/entities/messages/messagesSlice.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/features/chat/ui/ChatBody/ChatBody.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/chat/ui/ChatBody/ChatBody.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/features/chat/ui/ChatMessageBlock/ChatMessageBlock.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/chat/ui/ChatMessageBlock/ChatMessageBlock.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/pages/Home/Home.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/pages/Home/Home.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/shared/socket.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/shared/socket.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,7 +48,7 @@
     "npm.client > dev.executor": "Run",
     "npm.dev.executor": "Run",
     "npm.start.executor": "Run",
-    "ts.external.directory.path": "C:\\Program Files\\JetBrains\\WebStorm 2025.1\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
+    "ts.external.directory.path": "D:\\WORK\\chat\\chat-websocket\\client\\node_modules\\typescript\\lib",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -132,7 +132,7 @@
       <updated>1752318788026</updated>
       <workItem from="1752318789636" duration="1784000" />
       <workItem from="1752320656935" duration="24484000" />
-      <workItem from="1757949329327" duration="11153000" />
+      <workItem from="1757949329327" duration="12441000" />
     </task>
     <task id="LOCAL-00001" summary="Ref">
       <option name="closed" value="true" />
@@ -486,7 +486,15 @@
       <option name="project" value="LOCAL" />
       <updated>1757960583810</updated>
     </task>
-    <option name="localTasksCounter" value="45" />
+    <task id="LOCAL-00045" summary="Ref">
+      <option name="closed" value="true" />
+      <created>1757960865985</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1757960865985</updated>
+    </task>
+    <option name="localTasksCounter" value="46" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
