@@ -17,7 +17,7 @@ export function ChatMessageBlock() {
     const rawRoom = useSelector((state: RootState) => state.user.room);
     const messages = useSelector((state: RootState) => state.messages.messages);
 
-    if(!rawRoom || ! rawName) return '';
+    if(!rawRoom || !rawName) return '';
     // Фикс: всегда строка
     const name: string = rawName ?? "Гость";
     const room: string = rawRoom ?? "general";
@@ -49,7 +49,7 @@ export function ChatMessageBlock() {
                 id: `${socket.id}-${Date.now()}`,
                 name,
                 text: message,
-                socketId: socket.id,
+                socketId: socket.id!,
                 roomId: room,
             };
             socket.emit("sendMessage", newMsg);
@@ -59,7 +59,7 @@ export function ChatMessageBlock() {
 
     return (
         <div className="flex flex-col h-full">
-            <CallPanel localUserId={socket.id} room={room} />
+            <CallPanel localUserId={socket.id!} room={room} />
             <ChatBody messages={messages} />
             <form onSubmit={handleSubmit} className="flex gap-3 p-2 mt-4">
                 <input
