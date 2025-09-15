@@ -5,8 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d90a4a37-7322-4d35-bd30-c89f1aafaca2" name="Changes" comment="Ref">
+      <change beforePath="$PROJECT_DIR$/client/src/features/call/model/useWebRTC.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/call/model/useWebRTC.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/features/call/ui/CallPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/call/ui/CallPanel.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/features/chat/ui/ChatMessageBlock/ChatMessageBlock.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/chat/ui/ChatMessageBlock/ChatMessageBlock.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/index.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -128,7 +130,7 @@
       <updated>1752318788026</updated>
       <workItem from="1752318789636" duration="1784000" />
       <workItem from="1752320656935" duration="24484000" />
-      <workItem from="1757949329327" duration="2282000" />
+      <workItem from="1757949329327" duration="3343000" />
     </task>
     <task id="LOCAL-00001" summary="Ref">
       <option name="closed" value="true" />
@@ -362,7 +364,15 @@
       <option name="project" value="LOCAL" />
       <updated>1757951460829</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="Ref">
+      <option name="closed" value="true" />
+      <created>1757951696453</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1757951696453</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

@@ -12,11 +12,16 @@ export function ChatMessageBlock() {
     const socket = useSocket();
     const dispatch = useDispatch();
     const [message, setMessage] = useState("");
-    const { name, room: rawRoom } = useSelector((state: RootState) => state.user);
+    // const { name, room: rawRoom } = useSelector((state: RootState) => state.user);
+    const rawName = useSelector((state: RootState) => state.user.name);
+    const rawRoom = useSelector((state: RootState) => state.user.room);
     const messages = useSelector((state: RootState) => state.messages.messages);
 
-    // всегда строка
+    const name: string = rawName ?? "Гость";
     const room: string = rawRoom ?? "general";
+
+    // всегда строка
+    // const room: string = rawRoom ?? "general";
 
     useGetMessagesQuery(room, { refetchOnMountOrArgChange: true, skip: !room });
 
@@ -40,12 +45,11 @@ export function ChatMessageBlock() {
 
     function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        if (message.trim() && name && room) {
+        if (message.trim()) {
             const newMsg: Message = {
                 id: `${socket.id}-${Date.now()}`,
                 name,
                 text: message,
-                sender: "Вы",
                 socketId: socket.id,
                 roomId: room,
             };

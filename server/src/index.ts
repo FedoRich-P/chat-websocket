@@ -104,6 +104,10 @@ io.on('connection', (socket: Socket) => {
         io.to(to).emit("iceCandidate", candidate);
     });
 
+    socket.on("endCall", ({ to }) => {
+        io.to(to).emit("callEnded");
+    });
+
     socket.on('disconnect', () => {
         const user = users.get(socket.id);
         if (!user) return;
@@ -114,6 +118,7 @@ io.on('connection', (socket: Socket) => {
 });
 
 httpServer.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
 
 
 
