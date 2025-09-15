@@ -2,17 +2,34 @@ import { useState, useEffect } from "react";
 import { useWebRTC } from "../model/useWebRTC";
 import { useSocket } from "../../../shared";
 
-export function CallPanel({ localUserId, room }: { localUserId: string, room: string }) {
+interface RoomUser {
+    id: string;
+    name: string;
+}
+
+export function CallPanel({ localUserId, room }: { localUserId: string; room: string }) {
     const socket = useSocket();
-    const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
+    const [users, setUsers] = useState<RoomUser[]>([]);
     const [remoteUserId, setRemoteUserId] = useState<string | null>(null);
 
-    const { localVideo, remoteVideo, incomingCall, startCall, acceptCall } = useWebRTC(localUserId, remoteUserId || undefined);
+    const { localVideo, remoteVideo, incomingCall, startCall, acceptCall } = useWebRTC(
+        localUserId,
+        remoteUserId || undefined
+    );
 
     useEffect(() => {
+        if (!room) return;
         socket.emit("getUsers", room);
-        socket.on("users", (roomUsers) => setUsers(roomUsers.filter(u => u.id !== localUserId)));
-        return () => socket.off("users");
+
+        const handleUsers = (roomUsers: RoomUser[]) => {
+            setUsers(roomUsers.filter((u: RoomUser) => u.id !== localUserId));
+        };
+
+        socket.on("users", handleUsers);
+
+        return () => {
+            socket.off("users", handleUsers);
+        };
     }, [socket, room, localUserId]);
 
     return (
@@ -20,9 +37,13 @@ export function CallPanel({ localUserId, room }: { localUserId: string, room: st
             <video ref={localVideo} autoPlay playsInline muted className="w-1/2 border" />
             <video ref={remoteVideo} autoPlay playsInline className="w-1/2 border" />
 
-            <select onChange={e => setRemoteUserId(e.target.value)} className="border p-2 rounded">
+            <select onChange={(e) => setRemoteUserId(e.target.value)} className="border p-2 rounded">
                 <option value="">Выберите пользователя</option>
-                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                        {u.name}
+                    </option>
+                ))}
             </select>
 
             <button onClick={startCall} className="bg-green-500 text-white px-4 py-2 rounded">

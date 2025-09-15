@@ -11,43 +11,45 @@ import { CallPanel } from "../../../call/ui/CallPanel";
 export function ChatMessageBlock() {
     const socket = useSocket();
     const dispatch = useDispatch();
-    const [message, setMessage] = useState('');
+    const [message, setMessage] = useState("");
     const { name, room } = useSelector((state: RootState) => state.user);
     const messages = useSelector((state: RootState) => state.messages.messages);
 
-    useGetMessagesQuery(room, { refetchOnMountOrArgChange: true, skip: !room });
+    useGetMessagesQuery(room ?? "general", { refetchOnMountOrArgChange: true, skip: !room });
 
     useEffect(() => {
         const handler = (data: Message) => {
             dispatch(addMessage(data));
-            const isSystem = data.name === 'Система';
-            const isJoinOrLeave = data.text.includes('присоединился') || data.text.includes('покинул');
+            const isSystem = data.name === "Система";
+            const isJoinOrLeave = data.text.includes("присоединился") || data.text.includes("покинул");
             if (isSystem && isJoinOrLeave) setTimeout(() => dispatch(removeMessage(data.id)), 5000);
         };
-        socket.on('message', handler);
-        return () => socket.off('message', handler);
+        socket.on("message", handler);
+        return () => {
+            socket.off("message", handler);
+        };
     }, [socket, dispatch]);
 
     function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        if (message.trim() && name) {
-            const newMsg = {
+        if (message.trim() && name && room) {
+            const newMsg: Message = {
                 id: `${socket.id}-${Date.now()}`,
                 name,
                 text: message,
-                sender: 'Вы',
+                sender: "Вы",
                 socketId: socket.id,
                 roomId: room,
             };
-            socket.emit('sendMessage', newMsg);
-            setMessage('');
+            socket.emit("sendMessage", newMsg);
+            setMessage("");
         }
     }
 
     return (
         <div className="flex flex-col h-full">
+            {room && <CallPanel localUserId={socket.id} room={room} />}
             <ChatBody messages={messages} />
-
             <form onSubmit={handleSubmit} className="flex gap-3 p-2 mt-4">
                 <input
                     type="text"
@@ -60,8 +62,6 @@ export function ChatMessageBlock() {
                     Написать
                 </button>
             </form>
-
-            <CallPanel localUserId={socket.id} room={room} />
         </div>
     );
 }
