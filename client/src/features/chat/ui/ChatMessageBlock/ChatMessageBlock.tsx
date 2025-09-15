@@ -6,6 +6,7 @@ import {type ChangeEvent, type FormEvent, useEffect, useState} from "react";
 import {useSocket} from "../../../../shared";
 import {addMessage, removeMessage} from "../../../../entities";
 import type {Message} from "../../../../shared/types.ts";
+import {CallPanel} from "../../../call/ui/CallPanel.tsx";
 
 export function ChatMessageBlock() {
     const socket = useSocket();
@@ -56,6 +57,7 @@ export function ChatMessageBlock() {
     return (
         <div className="flex flex-col h-full">
             <ChatBody messages={messages}/>
+            <CallPanel remoteUserId="socket-id-другого-пользователя" />
             <form onSubmit={handleSubmit} className="flex gap-3 p-2 mt-4">
                 <input
                     type="text"
