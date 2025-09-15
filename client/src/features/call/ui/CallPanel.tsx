@@ -1,4 +1,5 @@
-import {useWebRTC} from "../chat/model/useWebRTC.ts";
+import {useWebRTC} from "../model/useWebRTC.ts";
+
 
 export function CallPanel({ remoteUserId }: { remoteUserId: string }) {
     const { localVideo, remoteVideo, incomingCall, startCall, acceptCall } = useWebRTC("me", remoteUserId);
