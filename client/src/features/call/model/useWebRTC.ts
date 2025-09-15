@@ -1,33 +1,41 @@
-// useWebRTC.ts
 import { useEffect, useRef, useState } from "react";
 import type { Socket } from "socket.io-client";
 
 export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: string) {
-    const localVideo = useRef<HTMLVideoElement | null>(null);
-    const remoteVideo = useRef<HTMLVideoElement | null>(null);
-    const localStreamRef = useRef<MediaStream | null>(null);
-    const pcRef = useRef<RTCPeerConnection | null>(null);
+    const localVideo = useRef<HTMLVideoElement>(null);
+    const remoteVideo = useRef<HTMLVideoElement>(null);
+    const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | null>(null);
     const [incomingCall, setIncomingCall] = useState<{ from: string; signal: any } | null>(null);
-    const candidateBufferRef = useRef<any[]>([]);
-    const currentRemoteIdRef = useRef<string | null>(null);
 
-    // helper: create pc targeted to 'toId' (toId overrides remoteUserId)
-    async function createPeerConnection(toId?: string) {
-        // reuse if exists
-        if (pcRef.current) return pcRef.current;
+    // один общий стрим
+    const localStreamRef = useRef<MediaStream | null>(null);
 
+    // инициализация стрима
+    async function initLocalStream() {
+        if (localStreamRef.current && localStreamRef.current.active) {
+            return localStreamRef.current;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localStreamRef.current = stream;
+            if (localVideo.current) {
+                localVideo.current.srcObject = stream;
+            }
+            return stream;
+        } catch (err) {
+            console.error("Ошибка доступа к медиа:", err);
+            return null;
+        }
+    }
+
+    async function createPeerConnection() {
         const pc = new RTCPeerConnection({
             iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
         });
 
-        pc.onicecandidate = (event) => {
-            if (event.candidate) {
-                const target = toId || currentRemoteIdRef.current || remoteUserId;
-                if (target) {
-                    socket.emit("iceCandidate", { to: target, candidate: event.candidate });
-                    // debug
-                    // console.log('[client] emit iceCandidate to', target, event.candidate);
-                }
+        pc.onicecandidate = (e) => {
+            if (e.candidate && remoteUserId) {
+                socket.emit("iceCandidate", { to: remoteUserId, candidate: e.candidate });
             }
         };
 
@@ -37,153 +45,85 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
             }
         };
 
-        // get or reuse local stream
-        if (!localStreamRef.current) {
-            try {
-                localStreamRef.current = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            } catch (err) {
-                console.error("getUserMedia failed", err);
-                throw err;
-            }
+        const stream = await initLocalStream();
+        if (stream) {
+            stream.getTracks().forEach((track) => pc.addTrack(track, stream));
         }
 
-        if (localVideo.current && localStreamRef.current) {
-            localVideo.current.srcObject = localStreamRef.current;
-        }
-
-        // add tracks
-        localStreamRef.current.getTracks().forEach((track) => pc.addTrack(track, localStreamRef.current as MediaStream));
-
-        pcRef.current = pc;
-
-        // flush buffered candidates if any
-        if (candidateBufferRef.current.length > 0) {
-            candidateBufferRef.current.forEach(async (c) => {
-                try {
-                    await pc.addIceCandidate(new RTCIceCandidate(c));
-                } catch (e) {
-                    console.warn("addIceCandidate (buffered) failed", e);
-                }
-            });
-            candidateBufferRef.current = [];
-        }
-
+        setPeerConnection(pc);
         return pc;
     }
 
     async function startCall() {
-        if (!remoteUserId) {
-            console.warn("startCall: no remoteUserId");
-            return;
-        }
-        currentRemoteIdRef.current = remoteUserId;
-
-        const pc = await createPeerConnection(remoteUserId);
+        if (!remoteUserId) return;
+        const pc = await createPeerConnection();
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-
-        socket.emit("callUser", { userToCall: remoteUserId, signal: offer, from: localUserId });
-        // console.log('[client] callUser emitted', remoteUserId);
+        socket.emit("callUser", {
+            userToCall: remoteUserId,
+            signal: offer,
+            from: localUserId,
+        });
     }
 
     async function acceptCall() {
         if (!incomingCall) return;
-        const callerId = incomingCall.from;
-        currentRemoteIdRef.current = callerId;
-
-        const pc = await createPeerConnection(callerId);
-        // set remote (offer)
+        const pc = await createPeerConnection();
         await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.signal));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-
-        socket.emit("answerCall", { to: callerId, signal: answer });
+        socket.emit("answerCall", { to: incomingCall.from, signal: answer });
         setIncomingCall(null);
     }
 
     function endCall() {
-        // close pc and stop local tracks (optionally)
-        if (pcRef.current) {
-            pcRef.current.close();
-            pcRef.current = null;
-        }
+        peerConnection?.close();
+        setPeerConnection(null);
 
         if (remoteVideo.current) {
             remoteVideo.current.srcObject = null;
         }
 
-        // don't stop local stream completely if you want to keep cam on; if you want to stop:
-        // localStreamRef.current?.getTracks().forEach(t => t.stop());
-        const target = currentRemoteIdRef.current || remoteUserId;
-        if (target) {
-            socket.emit("endCall", { to: target });
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach((t) => t.stop());
+            localStreamRef.current = null;
         }
 
-        currentRemoteIdRef.current = null;
-        candidateBufferRef.current = [];
+        if (remoteUserId) {
+            socket.emit("endCall", { to: remoteUserId });
+        }
     }
 
     useEffect(() => {
-        // incoming call (someone called you)
-        const onIncoming = (data: { from: string; signal: any; name?: string }) => {
-            // show caller info
-            setIncomingCall({ from: data.from, signal: data.signal });
-            // store caller id so we can answer and send candidates
-            // currentRemoteIdRef.current = data.from; // set only on accept to avoid confusion
-        };
+        socket.on("incomingCall", (data) => setIncomingCall(data));
 
-        const onCallAccepted = async (signal: any) => {
-            // remote accepted our offer -> set remote desc
-            const pc = pcRef.current;
-            if (pc) {
+        socket.on("callAccepted", async (signal) => {
+            if (peerConnection) {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
+            }
+        });
+
+        socket.on("iceCandidate", async (candidate) => {
+            if (peerConnection) {
                 try {
-                    await pc.setRemoteDescription(new RTCSessionDescription(signal));
-                } catch (e) {
-                    console.error("setRemoteDescription failed on callAccepted", e);
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch (err) {
+                    console.error("Ошибка добавления ICE:", err);
                 }
-            } else {
-                console.warn("callAccepted but no peerConnection yet");
             }
-        };
+        });
 
-        const onIce = async (candidate: any) => {
-            const pc = pcRef.current;
-            if (pc) {
-                try {
-                    await pc.addIceCandidate(new RTCIceCandidate(candidate));
-                } catch (e) {
-                    console.warn("addIceCandidate failed", e);
-                }
-            } else {
-                // buffer until pc created
-                candidateBufferRef.current.push(candidate);
-            }
-        };
-
-        const onCallEnded = () => {
-            // remote ended: cleanup
-            if (pcRef.current) {
-                pcRef.current.close();
-                pcRef.current = null;
-            }
-            if (remoteVideo.current) remoteVideo.current.srcObject = null;
-            setIncomingCall(null);
-            currentRemoteIdRef.current = null;
-            candidateBufferRef.current = [];
-        };
-
-        socket.on("incomingCall", onIncoming);
-        socket.on("callAccepted", onCallAccepted);
-        socket.on("iceCandidate", onIce);
-        socket.on("callEnded", onCallEnded);
+        socket.on("callEnded", () => {
+            endCall();
+        });
 
         return () => {
-            socket.off("incomingCall", onIncoming);
-            socket.off("callAccepted", onCallAccepted);
-            socket.off("iceCandidate", onIce);
-            socket.off("callEnded", onCallEnded);
+            socket.off("incomingCall");
+            socket.off("callAccepted");
+            socket.off("iceCandidate");
+            socket.off("callEnded");
         };
-    }, [socket]); // don't include peerConnection in deps — we use refs
+    }, [socket, peerConnection]);
 
     return { localVideo, remoteVideo, incomingCall, startCall, acceptCall, endCall };
 }

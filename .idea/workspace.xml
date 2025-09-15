@@ -4,27 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d90a4a37-7322-4d35-bd30-c89f1aafaca2" name="Changes" comment="Ref">
-      <change afterPath="$PROJECT_DIR$/client/src/features/call/model/useChatLogic.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/client/src/features/call/model/useChatMessages.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/client/src/features/chat/ui/ChatForm/ChatForm.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/client/src/shared/hooks/hooks.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/client/src/widgets/ChatMessageBlock/ChatMessageBlock.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/client/src/widgets/ChatSidebar/ChatSidebar.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/entities/messages/messagesSlice.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/entities/messages/messagesSlice.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/entities/user/userSlice.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/entities/user/userSlice.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/features/call/model/useWebRTC.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/call/model/useWebRTC.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/features/call/ui/CallPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/call/ui/CallPanel.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/features/chat/ui/ChatBody/ChatBody.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/chat/ui/ChatBody/ChatBody.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/features/chat/ui/ChatMessageBlock/ChatMessageBlock.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/chat/ui/ChatMessageBlock/ChatMessageBlock.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/features/chat/ui/ChatSidebar/ChatSidebar.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/features/chat/ui/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/chat/ui/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/pages/Chat/Chat.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/pages/Chat/Chat.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/pages/Home/Home.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/pages/Home/Home.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/shared/socket.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/shared/socket.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/index.ts" afterDir="false" />
-    </list>
+    <list default="true" id="d90a4a37-7322-4d35-bd30-c89f1aafaca2" name="Changes" comment="Ref" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -136,9 +116,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="npm.build" />
         <item itemvalue="npm.client &gt; dev" />
         <item itemvalue="npm.start" />
-        <item itemvalue="npm.build" />
         <item itemvalue="npm.build (1)" />
         <item itemvalue="npm.dev" />
       </list>
@@ -160,7 +140,7 @@
       <updated>1752318788026</updated>
       <workItem from="1752318789636" duration="1784000" />
       <workItem from="1752320656935" duration="24484000" />
-      <workItem from="1757949329327" duration="19493000" />
+      <workItem from="1757949329327" duration="20124000" />
     </task>
     <task id="LOCAL-00001" summary="Ref">
       <option name="closed" value="true" />
@@ -538,7 +518,15 @@
       <option name="project" value="LOCAL" />
       <updated>1757962741157</updated>
     </task>
-    <option name="localTasksCounter" value="48" />
+    <task id="LOCAL-00048" summary="Ref">
+      <option name="closed" value="true" />
+      <created>1757969778974</created>
+      <option name="number" value="00048" />
+      <option name="presentableId" value="LOCAL-00048" />
+      <option name="project" value="LOCAL" />
+      <updated>1757969778974</updated>
+    </task>
+    <option name="localTasksCounter" value="49" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
