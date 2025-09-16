@@ -1,124 +1,214 @@
-// src/hooks/useWebRTC.ts
 import { useEffect, useRef, useState } from "react";
-import { Socket } from "socket.io-client";
+import type { Socket } from "socket.io-client";
 
-interface UseWebRTCProps {
-    socket: Socket;
-    localUserId: string;
-    remoteUserId?: string;
+interface IncomingCallData {
+    from: string;
+    signal: RTCSessionDescriptionInit;
+    name?: string | null;
+    mode: 'audio' | 'video';
 }
 
-export function useWebRTC({ socket, localUserId, remoteUserId }: UseWebRTCProps) {
-    const localVideo = useRef<HTMLVideoElement>(null);
-    const remoteVideo = useRef<HTMLVideoElement>(null);
-    const [incomingCall, setIncomingCall] = useState<any>(null);
-    const [callActive, setCallActive] = useState(false);
-    const [callSound] = useState(() => new Audio("/call.mp3")); // положи call.mp3 в public/
-    const pcRef = useRef<RTCPeerConnection | null>(null);
+export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: string) {
+    const localVideo = useRef<HTMLVideoElement | null>(null);
+    const remoteVideo = useRef<HTMLVideoElement | null>(null);
 
-    const config: RTCConfiguration = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+    const pcRef = useRef<RTCPeerConnection | null>(null);
+    const localStreamRef = useRef<MediaStream | null>(null);
+    const pendingCandidates = useRef<RTCIceCandidateInit[]>([]);
+    const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
+    const [canPlayRingtone, setCanPlayRingtone] = useState(false);
+
+    // 🔔 Звонок
+    const ringtoneRef = useRef<HTMLAudioElement | null>(null);
+    if (!ringtoneRef.current) {
+        ringtoneRef.current = new Audio("/call.mp3");
+        ringtoneRef.current.loop = true;
+    }
+
+    // Попытка автозапуска звонка
+    const tryPlayRingtone = () => {
+        if (!ringtoneRef.current) return;
+        ringtoneRef.current.play().then(() => {
+            setCanPlayRingtone(true);
+        }).catch(() => {
+            console.warn("Автовоспроизведение звонка заблокировано браузером");
+            setCanPlayRingtone(false);
+        });
+    };
+
+    async function ensureLocalStream(mode: 'audio' | 'video') {
+        if (localStreamRef.current && localStreamRef.current.active) return localStreamRef.current;
+        try {
+            const constraints = mode === 'audio' ? { audio: true, video: false } : { audio: true, video: true };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            localStreamRef.current = stream;
+            if (localVideo.current) localVideo.current.srcObject = stream;
+            return stream;
+        } catch (err) {
+            console.error("Ошибка доступа к медиа:", err);
+            throw err;
+        }
+    }
+
+    async function createPeerConnection() {
+        if (pcRef.current) return pcRef.current;
+
+        const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+
+        pc.onicecandidate = (e) => {
+            if (e.candidate && remoteUserId) {
+                socket.emit("iceCandidate", { to: remoteUserId, candidate: e.candidate });
+            }
+        };
+
+        pc.ontrack = (e) => {
+            if (remoteVideo.current) remoteVideo.current.srcObject = e.streams[0];
+        };
+
+        pcRef.current = pc;
+        return pc;
+    }
+
+    async function startCall(mode: 'audio' | 'video' = 'video') {
+        if (!remoteUserId) return;
+        try {
+            const pc = await createPeerConnection();
+            const stream = await ensureLocalStream(mode);
+            stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            socket.emit("callUser", { userToCall: remoteUserId, signal: offer, from: localUserId, mode });
+        } catch (err) {
+            console.error("Ошибка при старте звонка:", err);
+        }
+    }
+
+    async function acceptCall(mode: 'audio' | 'video' = 'video') {
+        if (!incomingCall) return;
+
+        // 🔔 Остановим звонок
+        ringtoneRef.current?.pause();
+        ringtoneRef.current!.currentTime = 0;
+
+        try {
+            const pc = await createPeerConnection();
+            const stream = await ensureLocalStream(mode);
+            stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+
+            await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.signal));
+
+            for (const c of pendingCandidates.current) {
+                try {
+                    await pc.addIceCandidate(new RTCIceCandidate(c));
+                } catch (err) {
+                    console.warn("Не удалось добавить ICE-кандидат:", err);
+                }
+            }
+            pendingCandidates.current = [];
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            socket.emit("answerCall", { to: incomingCall.from, signal: answer, mode });
+            setIncomingCall(null);
+        } catch (err) {
+            console.error("Ошибка при принятии звонка:", err);
+        }
+    }
+
+    function endCall() {
+        try {
+            pcRef.current?.close();
+        } catch (err) {
+            console.warn("Ошибка при закрытии PeerConnection:", err);
+        }
+        pcRef.current = null;
+
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach((t) => t.stop());
+            localStreamRef.current = null;
+        }
+
+        if (localVideo.current) localVideo.current.srcObject = null;
+        if (remoteVideo.current) remoteVideo.current.srcObject = null;
+
+        // 🔔 Остановим звонок
+        ringtoneRef.current?.pause();
+        ringtoneRef.current!.currentTime = 0;
+
+        if (remoteUserId) socket.emit("endCall", { to: remoteUserId });
+    }
 
     useEffect(() => {
-        socket.on("incomingCall", (data) => {
+        socket.on("incomingCall", (data: IncomingCallData) => {
+            if (data.from === localUserId) return;
+
             setIncomingCall(data);
-            callSound.loop = true;
-            callSound.play();
+
+            // 🔔 Пытаемся воспроизвести звонок
+            tryPlayRingtone();
         });
 
-        socket.on("callAccepted", async (signal) => {
-            callSound.pause();
-            if (!pcRef.current) return;
-            await pcRef.current.setRemoteDescription(new RTCSessionDescription(signal));
-            setCallActive(true);
+        socket.on("callAccepted", async (signal: RTCSessionDescriptionInit) => {
+            try {
+                if (!pcRef.current) await createPeerConnection();
+                await pcRef.current!.setRemoteDescription(new RTCSessionDescription(signal));
+
+                for (const c of pendingCandidates.current) {
+                    try {
+                        await pcRef.current!.addIceCandidate(new RTCIceCandidate(c));
+                    } catch (err) {
+                        console.warn("Не удалось добавить ICE-кандидат после callAccepted:", err);
+                    }
+                }
+                pendingCandidates.current = [];
+
+                // 🔔 Остановим звонок
+                ringtoneRef.current?.pause();
+                ringtoneRef.current!.currentTime = 0;
+            } catch (err) {
+                console.error("Ошибка при callAccepted:", err);
+            }
         });
 
-        socket.on("iceCandidate", async (candidate) => {
-            if (pcRef.current && candidate) await pcRef.current.addIceCandidate(candidate);
+        socket.on("iceCandidate", async (candidate: RTCIceCandidateInit) => {
+            try {
+                if (pcRef.current && pcRef.current.remoteDescription && pcRef.current.remoteDescription.type) {
+                    await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+                } else {
+                    pendingCandidates.current.push(candidate);
+                }
+            } catch (err) {
+                console.warn("Ошибка добавления ICE-кандидата:", err);
+            }
         });
 
-        socket.on("callEnded", () => {
-            endCall();
-        });
+        socket.on("callEnded", () => endCall());
+        socket.on("callError", (err) => console.warn(err));
 
         return () => {
             socket.off("incomingCall");
             socket.off("callAccepted");
             socket.off("iceCandidate");
             socket.off("callEnded");
+            socket.off("callError");
         };
-    }, [socket]);
+    }, [socket, localUserId, remoteUserId]);
 
-    const startCall = async (type: "audio" | "video") => {
-        pcRef.current = new RTCPeerConnection(config);
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-            video: type === "video",
-        });
-        stream.getTracks().forEach((track) => pcRef.current!.addTrack(track, stream));
-        if (localVideo.current) localVideo.current.srcObject = stream;
-
-        pcRef.current.ontrack = (event) => {
-            if (remoteVideo.current) remoteVideo.current.srcObject = event.streams[0];
-        };
-
-        pcRef.current.onicecandidate = (event) => {
-            if (event.candidate && remoteUserId) {
-                socket.emit("iceCandidate", { to: remoteUserId, candidate: event.candidate });
-            }
-        };
-
-        const offer = await pcRef.current.createOffer();
-        await pcRef.current.setLocalDescription(offer);
-
-        if (remoteUserId) {
-            socket.emit("callUser", { userToCall: remoteUserId, signal: offer, from: localUserId });
+    // Метод для ручного воспроизведения звонка (если браузер заблокировал автозапуск)
+    const playRingtoneManually = () => {
+        if (!canPlayRingtone) {
+            ringtoneRef.current?.play().then(() => setCanPlayRingtone(true)).catch(console.warn);
         }
     };
 
-    const acceptCall = async () => {
-        if (!incomingCall) return;
-        callSound.pause();
-        pcRef.current = new RTCPeerConnection(config);
-
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        stream.getTracks().forEach((track) => pcRef.current!.addTrack(track, stream));
-        if (localVideo.current) localVideo.current.srcObject = stream;
-
-        pcRef.current.ontrack = (event) => {
-            if (remoteVideo.current) remoteVideo.current.srcObject = event.streams[0];
-        };
-
-        pcRef.current.onicecandidate = (event) => {
-            if (event.candidate && incomingCall.from) {
-                socket.emit("iceCandidate", { to: incomingCall.from, candidate: event.candidate });
-            }
-        };
-
-        await pcRef.current.setRemoteDescription(new RTCSessionDescription(incomingCall.signal));
-        const answer = await pcRef.current.createAnswer();
-        await pcRef.current.setLocalDescription(answer);
-
-        socket.emit("answerCall", { to: incomingCall.from, signal: answer });
-        setCallActive(true);
-        setIncomingCall(null);
-    };
-
-    const endCall = () => {
-        pcRef.current?.close();
-        pcRef.current = null;
-        setCallActive(false);
-        setIncomingCall(null);
-        if (remoteUserId) socket.emit("endCall", { to: remoteUserId });
-    };
-
-    return { localVideo, remoteVideo, incomingCall, callActive, startCall, acceptCall, endCall };
+    return { localVideo, remoteVideo, incomingCall, startCall, acceptCall, endCall, playRingtoneManually };
 }
 
 
 
-
-// // useWebRTC.ts
 // import { useEffect, useRef, useState } from "react";
 // import type { Socket } from "socket.io-client";
 //

@@ -164,52 +164,62 @@ io.on("connection", (socket: Socket) => {
         }
     });
 
-// --- WebRTC signalling ---
-    socket.on("callUser", (payload: { userToCall?: string; signal?: any; name?: string }) => {
+    // --- WebRTC signalling ---
+    socket.on("callUser", (payload: { userToCall?: string; signal?: any; from?: string; name?: string }) => {
         const { userToCall, signal, name } = payload || {};
         log(`[callUser] from=${socket.id} to=${userToCall}`);
         if (!userToCall || !signal) {
-            return socket.emit("callError", { code: "invalid_payload", message: "Missing userToCall or signal" });
+            socket.emit("callError", { code: "invalid_payload", message: "Missing userToCall or signal" });
+            return;
         }
         if (!io.sockets.sockets.has(userToCall)) {
-            return socket.emit("callError", { code: "target_not_found", message: "User not connected", to: userToCall });
+            socket.emit("callError", { code: "target_not_found", message: "User not connected", to: userToCall });
+            return;
         }
-
-        // Отправляем сигнал и id вызывающего
-        io.to(userToCall).emit("incomingCall", {
-            from: socket.id,
-            signal,
-            name: users.get(socket.id)?.name || name || "Anonymous"
-        });
+        // emit to target only
+        io.to(userToCall).emit("incomingCall", { from: socket.id, signal, name: users.get(socket.id)?.name || name || null });
     });
 
     socket.on("answerCall", (payload: { to?: string; signal?: any }) => {
         const { to, signal } = payload || {};
         log(`[answerCall] from=${socket.id} to=${to}`);
-        if (!to || !signal) return socket.emit("callError", { code: "invalid_payload", message: "Missing 'to' or 'signal'" });
-        if (!io.sockets.sockets.has(to)) return socket.emit("callError", { code: "target_not_found", message: "User not connected", to });
-
-        io.to(to).emit("callAccepted", {
-            signal,
-            from: socket.id
-        });
+        if (!to || !signal) {
+            socket.emit("callError", { code: "invalid_payload", message: "Missing 'to' or 'signal'" });
+            return;
+        }
+        if (!io.sockets.sockets.has(to)) {
+            socket.emit("callError", { code: "target_not_found", message: "User not connected", to });
+            return;
+        }
+        io.to(to).emit("callAccepted", signal);
     });
 
     socket.on("iceCandidate", (payload: { to?: string; candidate?: any }) => {
         const { to, candidate } = payload || {};
         log(`[iceCandidate] from=${socket.id} to=${to} hasCandidate=${!!candidate}`);
-        if (!to || !candidate) return socket.emit("callError", { code: "invalid_payload", message: "Missing 'to' or 'candidate'" });
-        if (!io.sockets.sockets.has(to)) return socket.emit("callError", { code: "target_not_found", message: "User not connected", to });
-
-        io.to(to).emit("iceCandidate", { candidate, from: socket.id });
+        if (!to || !candidate) {
+            socket.emit("callError", { code: "invalid_payload", message: "Missing 'to' or 'candidate'" });
+            return;
+        }
+        if (!io.sockets.sockets.has(to)) {
+            socket.emit("callError", { code: "target_not_found", message: "User not connected", to });
+            return;
+        }
+        io.to(to).emit("iceCandidate", candidate);
     });
 
     socket.on("endCall", (payload: { to?: string }) => {
         const to = payload?.to;
         log(`[endCall] from=${socket.id} to=${to}`);
-        if (!to) return socket.emit("callError", { code: "invalid_payload", message: "Missing 'to'" });
-        if (!io.sockets.sockets.has(to)) return socket.emit("callEndedAck", { to });
-        io.to(to).emit("callEnded", { from: socket.id });
+        if (!to) {
+            socket.emit("callError", { code: "invalid_payload", message: "Missing 'to'" });
+            return;
+        }
+        if (!io.sockets.sockets.has(to)) {
+            socket.emit("callEndedAck", { to });
+            return;
+        }
+        io.to(to).emit("callEnded");
     });
 });
 
