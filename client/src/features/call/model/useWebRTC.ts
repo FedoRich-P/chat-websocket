@@ -1,30 +1,29 @@
-// useWebRTC.ts
 import { useEffect, useRef, useState } from "react";
 import type { Socket } from "socket.io-client";
 
-interface IncomingCallData {
-    from: string;
-    signal: RTCSessionDescriptionInit;
-    name?: string | null;
-}
-
 export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: string) {
-    const localVideo = useRef<HTMLVideoElement | null>(null);
-    const remoteVideo = useRef<HTMLVideoElement | null>(null);
-
-    const pcRef = useRef<RTCPeerConnection | null>(null);
+    const localVideo = useRef<HTMLVideoElement>(null);
+    const remoteVideo = useRef<HTMLVideoElement>(null);
+    const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
     const localStreamRef = useRef<MediaStream | null>(null);
-    const pendingCandidates = useRef<RTCIceCandidateInit[]>([]);
+    const [incomingCall, setIncomingCall] = useState<{ from: string; signal: RTCSessionDescriptionInit } | null>(null);
 
-    const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
-
-    async function ensureLocalStream() {
-        if (localStreamRef.current && localStreamRef.current.active) return localStreamRef.current;
+    async function getMediaStream() {
         try {
-            const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            localStreamRef.current = s;
-            if (localVideo.current) localVideo.current.srcObject = s;
-            return s;
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const hasVideo = devices.some(d => d.kind === "videoinput");
+            const hasAudio = devices.some(d => d.kind === "audioinput");
+
+            if (!hasVideo && !hasAudio) {
+                throw new Error("Нет доступных устройств (камера и микрофон отсутствуют)");
+            }
+
+            const constraints: MediaStreamConstraints = {
+                video: hasVideo,
+                audio: hasAudio,
+            };
+
+            return await navigator.mediaDevices.getUserMedia(constraints);
         } catch (err) {
             console.error("Ошибка доступа к медиа:", err);
             throw err;
@@ -32,24 +31,28 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
     }
 
     async function createPeerConnection() {
-        if (pcRef.current) return pcRef.current;
+        let stream = localStreamRef.current;
+        if (!stream) {
+            stream = await getMediaStream();
+            localStreamRef.current = stream;
+            if (localVideo.current) localVideo.current.srcObject = stream;
+        }
 
         const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
 
-        pc.onicecandidate = (e) => {
+        pc.onicecandidate = e => {
             if (e.candidate && remoteUserId) {
                 socket.emit("iceCandidate", { to: remoteUserId, candidate: e.candidate });
             }
         };
 
-        pc.ontrack = (e) => {
+        pc.ontrack = e => {
             if (remoteVideo.current) remoteVideo.current.srcObject = e.streams[0];
         };
 
-        const stream = await ensureLocalStream();
-        stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
-        pcRef.current = pc;
+        peerConnectionRef.current = pc;
         return pc;
     }
 
@@ -63,25 +66,8 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
 
     async function acceptCall() {
         if (!incomingCall) return;
-        // ignore incoming call if from self (safety)
-        if (incomingCall.from === localUserId) {
-            setIncomingCall(null);
-            return;
-        }
-
         const pc = await createPeerConnection();
         await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.signal));
-
-        // apply pending ICEs
-        for (const c of pendingCandidates.current) {
-            try {
-                await pc.addIceCandidate(new RTCIceCandidate(c));
-            } catch (err) {
-                console.error("addIceCandidate error (apply pending):", err);
-            }
-        }
-        pendingCandidates.current = [];
-
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         socket.emit("answerCall", { to: incomingCall.from, signal: answer });
@@ -89,11 +75,11 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
     }
 
     function endCall() {
-        pcRef.current?.close();
-        pcRef.current = null;
+        peerConnectionRef.current?.close();
+        peerConnectionRef.current = null;
 
         if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach((t) => t.stop());
+            localStreamRef.current.getTracks().forEach(track => track.stop());
             localStreamRef.current = null;
         }
 
@@ -103,66 +89,202 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
         if (remoteUserId) socket.emit("endCall", { to: remoteUserId });
     }
 
+    interface IncomingCallData {
+        from: string;
+        signal: RTCSessionDescriptionInit;
+    }
+
     useEffect(() => {
-        socket.on("incomingCall", (data: IncomingCallData) => {
-            // ignore calls from self
-            if (data.from === localUserId) return;
-            setIncomingCall(data);
-        });
-
-        socket.on("callAccepted", async (signal: RTCSessionDescriptionInit) => {
-            if (!pcRef.current) {
-                // create PC in caller if not exists and then set remote
-                await createPeerConnection();
-            }
-            try {
-                await pcRef.current!.setRemoteDescription(new RTCSessionDescription(signal));
-            } catch (err) {
-                console.error("setRemoteDescription error (callAccepted):", err);
-            }
-
-            // apply any pending ICE after remote desc
-            for (const c of pendingCandidates.current) {
-                try {
-                    await pcRef.current!.addIceCandidate(new RTCIceCandidate(c));
-                } catch (err) {
-                    console.error("addIceCandidate error (post-accepted):", err);
-                }
-            }
-            pendingCandidates.current = [];
-        });
-
-        socket.on("iceCandidate", async (candidate: RTCIceCandidateInit) => {
-            if (pcRef.current && pcRef.current.remoteDescription && pcRef.current.remoteDescription.type) {
-                try {
-                    await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-                } catch (err) {
-                    console.error("addIceCandidate error:", err);
-                }
-            } else {
-                pendingCandidates.current.push(candidate);
+        socket.on("incomingCall", ({ from, signal }: IncomingCallData) => setIncomingCall({ from, signal }));
+        socket.on("callAccepted", async signal => {
+            if (peerConnectionRef.current) {
+                await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(signal));
             }
         });
-
-        socket.on("callEnded", () => {
-            endCall();
+        socket.on("iceCandidate", async candidate => {
+            if (peerConnectionRef.current && peerConnectionRef.current.remoteDescription) {
+                await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+            }
         });
-
-        socket.on("callError", (err) => {
-            console.warn("callError from server:", err);
-        });
+        socket.on("callEnded", () => endCall());
 
         return () => {
             socket.off("incomingCall");
             socket.off("callAccepted");
             socket.off("iceCandidate");
             socket.off("callEnded");
-            socket.off("callError");
         };
-    }, [socket, localUserId, remoteUserId, createPeerConnection, endCall]);
+    }, [socket, remoteUserId]);
 
     return { localVideo, remoteVideo, incomingCall, startCall, acceptCall, endCall };
 }
+
+
+// // useWebRTC.ts
+// import { useEffect, useRef, useState } from "react";
+// import type { Socket } from "socket.io-client";
+//
+// interface IncomingCallData {
+//     from: string;
+//     signal: RTCSessionDescriptionInit;
+//     name?: string | null;
+// }
+//
+// export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: string) {
+//     const localVideo = useRef<HTMLVideoElement | null>(null);
+//     const remoteVideo = useRef<HTMLVideoElement | null>(null);
+//
+//     const pcRef = useRef<RTCPeerConnection | null>(null);
+//     const localStreamRef = useRef<MediaStream | null>(null);
+//     const pendingCandidates = useRef<RTCIceCandidateInit[]>([]);
+//
+//     const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
+//
+//     async function ensureLocalStream() {
+//         if (localStreamRef.current && localStreamRef.current.active) return localStreamRef.current;
+//         try {
+//             const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+//             localStreamRef.current = s;
+//             if (localVideo.current) localVideo.current.srcObject = s;
+//             return s;
+//         } catch (err) {
+//             console.error("Ошибка доступа к медиа:", err);
+//             throw err;
+//         }
+//     }
+//
+//     async function createPeerConnection() {
+//         if (pcRef.current) return pcRef.current;
+//
+//         const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+//
+//         pc.onicecandidate = (e) => {
+//             if (e.candidate && remoteUserId) {
+//                 socket.emit("iceCandidate", { to: remoteUserId, candidate: e.candidate });
+//             }
+//         };
+//
+//         pc.ontrack = (e) => {
+//             if (remoteVideo.current) remoteVideo.current.srcObject = e.streams[0];
+//         };
+//
+//         const stream = await ensureLocalStream();
+//         stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+//
+//         pcRef.current = pc;
+//         return pc;
+//     }
+//
+//     async function startCall() {
+//         if (!remoteUserId) return;
+//         const pc = await createPeerConnection();
+//         const offer = await pc.createOffer();
+//         await pc.setLocalDescription(offer);
+//         socket.emit("callUser", { userToCall: remoteUserId, signal: offer, from: localUserId });
+//     }
+//
+//     async function acceptCall() {
+//         if (!incomingCall) return;
+//         // ignore incoming call if from self (safety)
+//         if (incomingCall.from === localUserId) {
+//             setIncomingCall(null);
+//             return;
+//         }
+//
+//         const pc = await createPeerConnection();
+//         await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.signal));
+//
+//         // apply pending ICEs
+//         for (const c of pendingCandidates.current) {
+//             try {
+//                 await pc.addIceCandidate(new RTCIceCandidate(c));
+//             } catch (err) {
+//                 console.error("addIceCandidate error (apply pending):", err);
+//             }
+//         }
+//         pendingCandidates.current = [];
+//
+//         const answer = await pc.createAnswer();
+//         await pc.setLocalDescription(answer);
+//         socket.emit("answerCall", { to: incomingCall.from, signal: answer });
+//         setIncomingCall(null);
+//     }
+//
+//     function endCall() {
+//         pcRef.current?.close();
+//         pcRef.current = null;
+//
+//         if (localStreamRef.current) {
+//             localStreamRef.current.getTracks().forEach((t) => t.stop());
+//             localStreamRef.current = null;
+//         }
+//
+//         if (localVideo.current) localVideo.current.srcObject = null;
+//         if (remoteVideo.current) remoteVideo.current.srcObject = null;
+//
+//         if (remoteUserId) socket.emit("endCall", { to: remoteUserId });
+//     }
+//
+//     useEffect(() => {
+//         socket.on("incomingCall", (data: IncomingCallData) => {
+//             // ignore calls from self
+//             if (data.from === localUserId) return;
+//             setIncomingCall(data);
+//         });
+//
+//         socket.on("callAccepted", async (signal: RTCSessionDescriptionInit) => {
+//             if (!pcRef.current) {
+//                 // create PC in caller if not exists and then set remote
+//                 await createPeerConnection();
+//             }
+//             try {
+//                 await pcRef.current!.setRemoteDescription(new RTCSessionDescription(signal));
+//             } catch (err) {
+//                 console.error("setRemoteDescription error (callAccepted):", err);
+//             }
+//
+//             // apply any pending ICE after remote desc
+//             for (const c of pendingCandidates.current) {
+//                 try {
+//                     await pcRef.current!.addIceCandidate(new RTCIceCandidate(c));
+//                 } catch (err) {
+//                     console.error("addIceCandidate error (post-accepted):", err);
+//                 }
+//             }
+//             pendingCandidates.current = [];
+//         });
+//
+//         socket.on("iceCandidate", async (candidate: RTCIceCandidateInit) => {
+//             if (pcRef.current && pcRef.current.remoteDescription && pcRef.current.remoteDescription.type) {
+//                 try {
+//                     await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+//                 } catch (err) {
+//                     console.error("addIceCandidate error:", err);
+//                 }
+//             } else {
+//                 pendingCandidates.current.push(candidate);
+//             }
+//         });
+//
+//         socket.on("callEnded", () => {
+//             endCall();
+//         });
+//
+//         socket.on("callError", (err) => {
+//             console.warn("callError from server:", err);
+//         });
+//
+//         return () => {
+//             socket.off("incomingCall");
+//             socket.off("callAccepted");
+//             socket.off("iceCandidate");
+//             socket.off("callEnded");
+//             socket.off("callError");
+//         };
+//     }, [socket, localUserId, remoteUserId, createPeerConnection, endCall]);
+//
+//     return { localVideo, remoteVideo, incomingCall, startCall, acceptCall, endCall };
+// }
 
 
 
