@@ -14,6 +14,7 @@ const ALLOWED_ORIGINS = [
 const app = express();
 const httpServer = createServer(app);
 
+// --- Express CORS ---
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
@@ -32,19 +33,14 @@ interface Message {
     roomId: string;
     createdAt?: number;
 }
-
-interface User {
-    id: string;
-    name: string;
-    room: string;
-}
+interface User { id: string; name: string; room: string; }
 
 // --- Хранилища ---
 const messages: Record<string, Message[]> = {};
 const users = new Map<string, User>();
 const activeCalls = new Map<string, string>(); // callerId -> calleeId
 
-// --- HTTP API для истории сообщений ---
+// --- API для истории сообщений ---
 app.get("/api/messages", (req, res) => {
     const room = (req.query.room as string) || "general";
     res.json(messages[room] || []);
@@ -53,7 +49,10 @@ app.get("/api/messages", (req, res) => {
 // --- Socket.IO сервер ---
 const io = new Server(httpServer, {
     cors: {
-        origin: ALLOWED_ORIGINS,
+        origin: (origin, callback) => {
+            if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+            callback(new Error("CORS not allowed"));
+        },
         methods: ["GET", "POST"],
         credentials: true,
         allowedHeaders: ["Content-Type", "Authorization"],
@@ -70,11 +69,11 @@ function log(...args: any[]) {
     console.log(new Date().toISOString(), ...args);
 }
 
-// --- События Socket.IO ---
+// --- Socket.IO события ---
 io.on("connection", (socket: Socket) => {
     log("[io] connected", socket.id);
 
-    // --- Пользователи ---
+    // --- Новый пользователь ---
     socket.on("newUser", ({ name, room }: { name?: string; room?: string }) => {
         const userName = name || "Anonymous";
         const roomName = room || "general";
@@ -101,11 +100,13 @@ io.on("connection", (socket: Socket) => {
         log(`[newUser] ${socket.id} name=${userName} room=${roomName}`);
     });
 
+    // --- Получить список пользователей ---
     socket.on("getUsers", (room: string) => {
         const roomUsers = Array.from(users.values()).filter(u => u.room === room);
         socket.emit("users", roomUsers);
     });
 
+    // --- Отправка сообщений ---
     socket.on("sendMessage", (msg: Message) => {
         if (!msg || !msg.roomId || !msg.text) return;
         msg.createdAt = Date.now();
@@ -115,6 +116,7 @@ io.on("connection", (socket: Socket) => {
         log(`[msg] from=${msg.socketId} room=${msg.roomId} text="${msg.text}"`);
     });
 
+    // --- Пользователь покидает чат ---
     socket.on("leaveChat", (data?: { name?: string }) => {
         const user = users.get(socket.id);
         const userName = user?.name || data?.name || "Anonymous";
@@ -148,6 +150,7 @@ io.on("connection", (socket: Socket) => {
         log(`[leaveChat] ${socket.id} name=${userName} room=${user.room}`);
     });
 
+    // --- Дисконнект пользователя ---
     socket.on("disconnect", (reason) => {
         const user = users.get(socket.id);
         if (user) {
@@ -213,6 +216,7 @@ io.on("connection", (socket: Socket) => {
     });
 });
 
+// --- Запуск сервера ---
 httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
