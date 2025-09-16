@@ -12,7 +12,7 @@ export function useWebRTC({ socket, localUserId, remoteUserId }: UseWebRTCProps)
     const remoteVideo = useRef<HTMLVideoElement>(null);
     const [incomingCall, setIncomingCall] = useState<any>(null);
     const [callActive, setCallActive] = useState(false);
-    const [callSound] = useState(() => new Audio("/call-tone.mp3")); // добавь звуковой файл
+    const [callSound] = useState(() => new Audio("/call.mp3")); // добавь звуковой файл
     const pcRef = useRef<RTCPeerConnection | null>(null);
 
     // ICE configuration
