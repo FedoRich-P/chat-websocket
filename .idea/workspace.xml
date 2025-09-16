@@ -5,7 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d90a4a37-7322-4d35-bd30-c89f1aafaca2" name="Changes" comment="Ref">
-      <change afterPath="$PROJECT_DIR$/client/public/call.mp3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/index.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -53,11 +53,11 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\WORK\chat\chat-websocket\client\public" />
       <recent name="D:\WORK\chat\chat-websocket\client\src" />
       <recent name="D:\WORK\chat\chat-websocket\client\src\features\call\model" />
       <recent name="D:\WORK\chat\chat-websocket\client\src\shared" />
       <recent name="D:\WORK\chat\chat-websocket\client\src\features\chat\ui" />
-      <recent name="D:\WORK\chat\chat-websocket\client\src\features\call" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\WORK\chat\chat-websocket\client\src\features\call\ui" />
@@ -143,15 +143,7 @@
       <workItem from="1752318789636" duration="1784000" />
       <workItem from="1752320656935" duration="24484000" />
       <workItem from="1757949329327" duration="21989000" />
-      <workItem from="1758003351001" duration="5772000" />
-    </task>
-    <task id="LOCAL-00009" summary="Ref">
-      <option name="closed" value="true" />
-      <created>1752395309507</created>
-      <option name="number" value="00009" />
-      <option name="presentableId" value="LOCAL-00009" />
-      <option name="project" value="LOCAL" />
-      <updated>1752395309507</updated>
+      <workItem from="1758003351001" duration="6207000" />
     </task>
     <task id="LOCAL-00010" summary="Ref">
       <option name="closed" value="true" />
@@ -537,7 +529,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758011232892</updated>
     </task>
-    <option name="localTasksCounter" value="58" />
+    <task id="LOCAL-00058" summary="Ref">
+      <option name="closed" value="true" />
+      <created>1758011927684</created>
+      <option name="number" value="00058" />
+      <option name="presentableId" value="LOCAL-00058" />
+      <option name="project" value="LOCAL" />
+      <updated>1758011927684</updated>
+    </task>
+    <option name="localTasksCounter" value="59" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

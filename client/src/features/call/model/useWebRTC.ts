@@ -1,3 +1,4 @@
+// src/hooks/useWebRTC.ts
 import { useEffect, useRef, useState } from "react";
 import { Socket } from "socket.io-client";
 
@@ -12,10 +13,9 @@ export function useWebRTC({ socket, localUserId, remoteUserId }: UseWebRTCProps)
     const remoteVideo = useRef<HTMLVideoElement>(null);
     const [incomingCall, setIncomingCall] = useState<any>(null);
     const [callActive, setCallActive] = useState(false);
-    const [callSound] = useState(() => new Audio("/call.mp3")); // добавь звуковой файл
+    const [callSound] = useState(() => new Audio("/call.mp3")); // положи call.mp3 в public/
     const pcRef = useRef<RTCPeerConnection | null>(null);
 
-    // ICE configuration
     const config: RTCConfiguration = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
     useEffect(() => {
@@ -51,7 +51,6 @@ export function useWebRTC({ socket, localUserId, remoteUserId }: UseWebRTCProps)
     const startCall = async (type: "audio" | "video") => {
         pcRef.current = new RTCPeerConnection(config);
 
-        // Локальный стрим
         const stream = await navigator.mediaDevices.getUserMedia({
             audio: true,
             video: type === "video",
@@ -82,10 +81,7 @@ export function useWebRTC({ socket, localUserId, remoteUserId }: UseWebRTCProps)
         callSound.pause();
         pcRef.current = new RTCPeerConnection(config);
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-            video: true,
-        });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
         stream.getTracks().forEach((track) => pcRef.current!.addTrack(track, stream));
         if (localVideo.current) localVideo.current.srcObject = stream;
 
@@ -116,15 +112,7 @@ export function useWebRTC({ socket, localUserId, remoteUserId }: UseWebRTCProps)
         if (remoteUserId) socket.emit("endCall", { to: remoteUserId });
     };
 
-    return {
-        localVideo,
-        remoteVideo,
-        incomingCall,
-        callActive,
-        startCall,
-        acceptCall,
-        endCall,
-    };
+    return { localVideo, remoteVideo, incomingCall, callActive, startCall, acceptCall, endCall };
 }
 
 
