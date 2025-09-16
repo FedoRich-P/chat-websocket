@@ -1,61 +1,42 @@
 import type { Socket } from "socket.io-client";
-import { useWebRTC } from "../model/useWebRTC";
+import {useWebRTC} from "../model/useWebRTC.ts";
 
 interface Props {
+    socket: Socket;
     localUserId: string;
     remoteUserId?: string;
     remoteUserName?: string;
-    socket: Socket;
 }
 
-export function CallPanel({ localUserId, remoteUserId, remoteUserName, socket }: Props) {
-    const { localVideo, remoteVideo, incomingCall, callType, startCall, acceptCall, endCall } =
-        useWebRTC(socket, localUserId, remoteUserId);
-
-    const callActive = Boolean(remoteVideo.current?.srcObject || incomingCall);
+export function CallPanel({ socket, localUserId, remoteUserId }: Props) {
+    const { localVideo, remoteVideo, incomingCall, callActive, startCall, acceptCall, endCall } =
+        useWebRTC({ socket, localUserId, remoteUserId });
 
     return (
-        <div className="flex flex-col md:flex-row gap-4 p-4 bg-gray-100 rounded-xl shadow-md w-full max-w-3xl mx-auto">
-            <div className="flex flex-col items-center gap-2 w-full md:w-1/2">
-                {incomingCall && incomingCall.from === remoteUserId && !callActive && (
-                    <div className="text-white bg-blue-600 px-3 py-1 rounded text-sm mb-1">
-                        Входящий {incomingCall.type}-звонок от {remoteUserName || "Собеседника"}
-                    </div>
-                )}
-                {callActive && !incomingCall && (
-                    <div className="text-white bg-green-600 px-3 py-1 rounded text-sm mb-1">
-                        {callType === "video" ? "Видео" : "Аудио"} звонок с {remoteUserName || "Собеседником"}
-                    </div>
-                )}
-                <video ref={localVideo} autoPlay muted playsInline className="w-full h-64 md:h-72 bg-black rounded-lg object-cover" />
-                <span className="text-sm text-gray-600">Вы</span>
-            </div>
+        <div className="p-4 bg-gray-100 rounded shadow-md flex flex-col items-center gap-4">
+            <video ref={localVideo} autoPlay muted className="w-64 h-48 bg-black rounded" />
+            <video ref={remoteVideo} autoPlay className="w-64 h-48 bg-black rounded" />
 
-            <div className="flex flex-col items-center gap-2 w-full md:w-1/2">
-                <video ref={remoteVideo} autoPlay playsInline className="w-full h-64 md:h-72 bg-black rounded-lg object-cover" />
-                <span className="text-sm text-gray-600">Собеседник</span>
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-2 w-full mt-4 md:mt-0 md:col-span-2">
-                {incomingCall && incomingCall.from === remoteUserId && !callActive && (
-                    <button onClick={acceptCall} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-                        Ответить
-                    </button>
-                )}
-
+            <div className="flex gap-2 mt-2">
                 {!callActive && !incomingCall && remoteUserId && (
                     <>
-                        <button onClick={() => startCall("audio")} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+                        <button onClick={() => startCall("audio")} className="bg-yellow-500 px-4 py-2 rounded">
                             Аудио
                         </button>
-                        <button onClick={() => startCall("video")} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">
+                        <button onClick={() => startCall("video")} className="bg-green-500 px-4 py-2 rounded">
                             Видео
                         </button>
                     </>
                 )}
 
+                {incomingCall && !callActive && (
+                    <button onClick={acceptCall} className="bg-blue-500 px-4 py-2 rounded">
+                        Ответить
+                    </button>
+                )}
+
                 {callActive && (
-                    <button onClick={endCall} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+                    <button onClick={endCall} className="bg-red-500 px-4 py-2 rounded">
                         Завершить
                     </button>
                 )}
