@@ -16,10 +16,7 @@ const httpServer = createServer(app);
 
 // --- Express CORS ---
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-        callback(new Error("CORS not allowed"));
-    },
+    origin: '*',
     credentials: true,
 }));
 app.use(express.json());
@@ -49,13 +46,9 @@ app.get("/api/messages", (req, res) => {
 // --- Socket.IO сервер ---
 const io = new Server(httpServer, {
     cors: {
-        origin: (origin, callback) => {
-            if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-            callback(new Error("CORS not allowed"));
-        },
+        origin: '*',
         methods: ["GET", "POST"],
         credentials: true,
-        allowedHeaders: ["Content-Type", "Authorization"],
     },
 });
 
