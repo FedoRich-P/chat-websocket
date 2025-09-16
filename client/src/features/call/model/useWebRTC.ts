@@ -18,28 +18,26 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
     const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
     const [canPlayRingtone, setCanPlayRingtone] = useState(false);
 
-    // 🔔 Звонок
     const ringtoneRef = useRef<HTMLAudioElement | null>(null);
     if (!ringtoneRef.current) {
         ringtoneRef.current = new Audio("/call.mp3");
         ringtoneRef.current.loop = true;
     }
 
-    // Попытка автозапуска звонка
     const tryPlayRingtone = () => {
         if (!ringtoneRef.current) return;
-        ringtoneRef.current.play().then(() => {
-            setCanPlayRingtone(true);
-        }).catch(() => {
-            console.warn("Автовоспроизведение звонка заблокировано браузером");
-            setCanPlayRingtone(false);
-        });
+        ringtoneRef.current.play()
+            .then(() => setCanPlayRingtone(true))
+            .catch(() => setCanPlayRingtone(false));
     };
 
     async function ensureLocalStream(mode: 'audio' | 'video') {
         if (localStreamRef.current && localStreamRef.current.active) return localStreamRef.current;
+
         try {
-            const constraints = mode === 'audio' ? { audio: true, video: false } : { audio: true, video: true };
+            const constraints = mode === 'audio'
+                ? { audio: true, video: false }
+                : { audio: true, video: true };
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             localStreamRef.current = stream;
             if (localVideo.current) localVideo.current.srcObject = stream;
@@ -53,7 +51,12 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
     async function createPeerConnection() {
         if (pcRef.current) return pcRef.current;
 
-        const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+        const pc = new RTCPeerConnection({
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "turn:turn.anyfirewall.com:443?transport=udp", username: "webrtc", credential: "webrtc" },
+            ],
+        });
 
         pc.onicecandidate = (e) => {
             if (e.candidate && remoteUserId) {
@@ -71,10 +74,11 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
 
     async function startCall(mode: 'audio' | 'video' = 'video') {
         if (!remoteUserId) return;
+
         try {
             const pc = await createPeerConnection();
             const stream = await ensureLocalStream(mode);
-            stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+            stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
@@ -88,14 +92,13 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
     async function acceptCall(mode: 'audio' | 'video' = 'video') {
         if (!incomingCall) return;
 
-        // 🔔 Остановим звонок
         ringtoneRef.current?.pause();
         ringtoneRef.current!.currentTime = 0;
 
         try {
             const pc = await createPeerConnection();
             const stream = await ensureLocalStream(mode);
-            stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+            stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
             await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.signal));
 
@@ -119,22 +122,23 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
     }
 
     function endCall() {
-        try {
-            pcRef.current?.close();
-        } catch (err) {
-            console.warn("Ошибка при закрытии PeerConnection:", err);
+        if (pcRef.current) {
+            try {
+                pcRef.current.close();
+            } catch (err) {
+                console.warn("Ошибка при закрытии PeerConnection:", err);
+            }
         }
         pcRef.current = null;
 
         if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach((t) => t.stop());
+            localStreamRef.current.getTracks().forEach(track => track.stop());
             localStreamRef.current = null;
         }
 
         if (localVideo.current) localVideo.current.srcObject = null;
         if (remoteVideo.current) remoteVideo.current.srcObject = null;
 
-        // 🔔 Остановим звонок
         ringtoneRef.current?.pause();
         ringtoneRef.current!.currentTime = 0;
 
@@ -144,10 +148,7 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
     useEffect(() => {
         socket.on("incomingCall", (data: IncomingCallData) => {
             if (data.from === localUserId) return;
-
             setIncomingCall(data);
-
-            // 🔔 Пытаемся воспроизвести звонок
             tryPlayRingtone();
         });
 
@@ -157,15 +158,12 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
                 await pcRef.current!.setRemoteDescription(new RTCSessionDescription(signal));
 
                 for (const c of pendingCandidates.current) {
-                    try {
-                        await pcRef.current!.addIceCandidate(new RTCIceCandidate(c));
-                    } catch (err) {
-                        console.warn("Не удалось добавить ICE-кандидат после callAccepted:", err);
+                    try { await pcRef.current!.addIceCandidate(new RTCIceCandidate(c)); } catch (err) {
+                        console.warn("Ошибка добавления ICE-кандидата после callAccepted:", err);
                     }
                 }
                 pendingCandidates.current = [];
 
-                // 🔔 Остановим звонок
                 ringtoneRef.current?.pause();
                 ringtoneRef.current!.currentTime = 0;
             } catch (err) {
@@ -175,7 +173,7 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
 
         socket.on("iceCandidate", async (candidate: RTCIceCandidateInit) => {
             try {
-                if (pcRef.current && pcRef.current.remoteDescription && pcRef.current.remoteDescription.type) {
+                if (pcRef.current && pcRef.current.remoteDescription?.type) {
                     await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
                 } else {
                     pendingCandidates.current.push(candidate);
@@ -197,7 +195,6 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
         };
     }, [socket, localUserId, remoteUserId]);
 
-    // Метод для ручного воспроизведения звонка (если браузер заблокировал автозапуск)
     const playRingtoneManually = () => {
         if (!canPlayRingtone) {
             ringtoneRef.current?.play().then(() => setCanPlayRingtone(true)).catch(console.warn);

@@ -14,7 +14,6 @@ const ALLOWED_ORIGINS = [
 const app = express();
 const httpServer = createServer(app);
 
-// --- CORS для HTTP ---
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
@@ -43,6 +42,7 @@ interface User {
 // --- Хранилища ---
 const messages: Record<string, Message[]> = {};
 const users = new Map<string, User>();
+const activeCalls = new Map<string, string>(); // callerId -> calleeId
 
 // --- HTTP API для истории сообщений ---
 app.get("/api/messages", (req, res) => {
@@ -50,15 +50,13 @@ app.get("/api/messages", (req, res) => {
     res.json(messages[room] || []);
 });
 
-// --- Socket.IO сервер с рабочим CORS ---
+// --- Socket.IO сервер ---
 const io = new Server(httpServer, {
     cors: {
-        origin: (origin, callback) => {
-            if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-            return callback(new Error("CORS not allowed"));
-        },
+        origin: ALLOWED_ORIGINS,
         methods: ["GET", "POST"],
         credentials: true,
+        allowedHeaders: ["Content-Type", "Authorization"],
     },
 });
 
@@ -139,6 +137,14 @@ io.on("connection", (socket: Socket) => {
 
         io.to(user.room).emit("message", leaveMsg);
         emitUsersForRoom(user.room);
+
+        // Завершаем звонок, если был активен
+        const calleeId = activeCalls.get(socket.id);
+        if (calleeId) {
+            io.to(calleeId).emit("callEnded");
+            activeCalls.delete(socket.id);
+        }
+
         log(`[leaveChat] ${socket.id} name=${userName} room=${user.room}`);
     });
 
@@ -162,17 +168,25 @@ io.on("connection", (socket: Socket) => {
 
             io.to(user.room).emit("message", leaveMsg);
             emitUsersForRoom(user.room);
+
+            // Завершаем звонок
+            const calleeId = activeCalls.get(socket.id);
+            if (calleeId) io.to(calleeId).emit("callEnded");
+            activeCalls.delete(socket.id);
+
             log(`[disconnect] ${socket.id} name=${user.name} reason=${reason}`);
         } else {
             log(`[disconnect] ${socket.id} (no user) reason=${reason}`);
         }
     });
 
-    // --- WebRTC signalling ---
-    socket.on("callUser", (payload: { userToCall?: string; signal?: any; name?: string }) => {
-        const { userToCall, signal, name } = payload || {};
+    // --- WebRTC signaling ---
+    socket.on("callUser", (payload: { userToCall?: string; signal?: any; mode?: 'audio' | 'video' }) => {
+        const { userToCall, signal, mode } = payload || {};
         if (!userToCall || !signal) return;
-        io.to(userToCall).emit("incomingCall", { from: socket.id, signal, name });
+
+        activeCalls.set(socket.id, userToCall);
+        io.to(userToCall).emit("incomingCall", { from: socket.id, signal, mode });
         log(`[callUser] from=${socket.id} to=${userToCall}`);
     });
 
@@ -194,14 +208,15 @@ io.on("connection", (socket: Socket) => {
         const to = payload?.to;
         if (!to) return;
         io.to(to).emit("callEnded");
+        activeCalls.delete(socket.id);
         log(`[endCall] from=${socket.id} to=${to}`);
     });
 });
 
-// --- Старт сервера ---
 httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
 
 
 
