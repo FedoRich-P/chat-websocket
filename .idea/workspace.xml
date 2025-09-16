@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d90a4a37-7322-4d35-bd30-c89f1aafaca2" name="Changes" comment="Ref" />
+    <list default="true" id="d90a4a37-7322-4d35-bd30-c89f1aafaca2" name="Changes" comment="Ref">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/features/call/model/useWebRTC.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/call/model/useWebRTC.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/features/call/ui/CallPanel.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/features/call/ui/CallPanel.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/index.ts" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -116,9 +121,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="npm.build" />
         <item itemvalue="npm.client &gt; dev" />
         <item itemvalue="npm.start" />
-        <item itemvalue="npm.build" />
         <item itemvalue="npm.build (1)" />
         <item itemvalue="npm.dev" />
       </list>
@@ -141,15 +146,7 @@
       <workItem from="1752318789636" duration="1784000" />
       <workItem from="1752320656935" duration="24484000" />
       <workItem from="1757949329327" duration="21989000" />
-      <workItem from="1758003351001" duration="2262000" />
-    </task>
-    <task id="LOCAL-00005" summary="Ref">
-      <option name="closed" value="true" />
-      <created>1752394028525</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
-      <option name="project" value="LOCAL" />
-      <updated>1752394028525</updated>
+      <workItem from="1758003351001" duration="3236000" />
     </task>
     <task id="LOCAL-00006" summary="Ref">
       <option name="closed" value="true" />
@@ -535,7 +532,15 @@
       <option name="project" value="LOCAL" />
       <updated>1758005822212</updated>
     </task>
-    <option name="localTasksCounter" value="54" />
+    <task id="LOCAL-00054" summary="Ref">
+      <option name="closed" value="true" />
+      <created>1758008318013</created>
+      <option name="number" value="00054" />
+      <option name="presentableId" value="LOCAL-00054" />
+      <option name="project" value="LOCAL" />
+      <updated>1758008318013</updated>
+    </task>
+    <option name="localTasksCounter" value="55" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

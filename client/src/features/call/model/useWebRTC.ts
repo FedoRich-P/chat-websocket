@@ -1,12 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import type { Socket } from "socket.io-client";
 
+interface IncomingCallData {
+    from: string;
+    signal: RTCSessionDescriptionInit;
+}
+
 export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: string) {
     const localVideo = useRef<HTMLVideoElement>(null);
     const remoteVideo = useRef<HTMLVideoElement>(null);
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
     const localStreamRef = useRef<MediaStream | null>(null);
-    const [incomingCall, setIncomingCall] = useState<{ from: string; signal: RTCSessionDescriptionInit } | null>(null);
+    const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
 
     async function getMediaStream() {
         try {
@@ -15,7 +20,8 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
             const hasAudio = devices.some(d => d.kind === "audioinput");
 
             if (!hasVideo && !hasAudio) {
-                throw new Error("Нет доступных устройств (камера и микрофон отсутствуют)");
+                console.warn("Нет доступных аудио/видео устройств");
+                return null;
             }
 
             const constraints: MediaStreamConstraints = {
@@ -23,37 +29,37 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
                 audio: hasAudio,
             };
 
-            return await navigator.mediaDevices.getUserMedia(constraints);
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            localStreamRef.current = stream;
+            if (localVideo.current) localVideo.current.srcObject = stream;
+            return stream;
         } catch (err) {
             console.error("Ошибка доступа к медиа:", err);
-            throw err;
+            return null;
         }
     }
 
     async function createPeerConnection() {
-        let stream = localStreamRef.current;
-        if (!stream) {
-            stream = await getMediaStream();
-            localStreamRef.current = stream;
-            if (localVideo.current) localVideo.current.srcObject = stream;
+        if (!peerConnectionRef.current) {
+            const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+
+            pc.onicecandidate = e => {
+                if (e.candidate && remoteUserId) {
+                    socket.emit("iceCandidate", { to: remoteUserId, candidate: e.candidate });
+                }
+            };
+
+            pc.ontrack = e => {
+                if (remoteVideo.current) remoteVideo.current.srcObject = e.streams[0];
+            };
+
+            const stream = localStreamRef.current || (await getMediaStream());
+            if (stream) stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+            peerConnectionRef.current = pc;
         }
 
-        const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-
-        pc.onicecandidate = e => {
-            if (e.candidate && remoteUserId) {
-                socket.emit("iceCandidate", { to: remoteUserId, candidate: e.candidate });
-            }
-        };
-
-        pc.ontrack = e => {
-            if (remoteVideo.current) remoteVideo.current.srcObject = e.streams[0];
-        };
-
-        stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-        peerConnectionRef.current = pc;
-        return pc;
+        return peerConnectionRef.current;
     }
 
     async function startCall() {
@@ -74,6 +80,7 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
         setIncomingCall(null);
     }
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     function endCall() {
         peerConnectionRef.current?.close();
         peerConnectionRef.current = null;
@@ -89,13 +96,8 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
         if (remoteUserId) socket.emit("endCall", { to: remoteUserId });
     }
 
-    interface IncomingCallData {
-        from: string;
-        signal: RTCSessionDescriptionInit;
-    }
-
     useEffect(() => {
-        socket.on("incomingCall", ({ from, signal }: IncomingCallData) => setIncomingCall({ from, signal }));
+        socket.on("incomingCall", (data: IncomingCallData) => setIncomingCall(data));
         socket.on("callAccepted", async signal => {
             if (peerConnectionRef.current) {
                 await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(signal));
@@ -114,10 +116,11 @@ export function useWebRTC(socket: Socket, localUserId: string, remoteUserId?: st
             socket.off("iceCandidate");
             socket.off("callEnded");
         };
-    }, [socket, remoteUserId]);
+    }, [socket, remoteUserId, endCall]);
 
     return { localVideo, remoteVideo, incomingCall, startCall, acceptCall, endCall };
 }
+
 
 
 // // useWebRTC.ts

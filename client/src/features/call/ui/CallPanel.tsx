@@ -12,8 +12,7 @@ export function CallPanel({ localUserId, remoteUserId, remoteUserName, socket }:
     const { localVideo, remoteVideo, incomingCall, startCall, acceptCall, endCall } =
         useWebRTC(socket, localUserId, remoteUserId);
 
-    // callActive only if remote video stream present
-    const callActive = Boolean(remoteVideo.current?.srcObject);
+    const callActive = Boolean(remoteVideo.current?.srcObject || incomingCall);
 
     return (
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 p-4 bg-gray-100 rounded-xl shadow-md w-full max-w-3xl mx-auto">
@@ -23,7 +22,7 @@ export function CallPanel({ localUserId, remoteUserId, remoteUserName, socket }:
                         Входящий звонок от {remoteUserName || "Собеседника"}
                     </div>
                 )}
-                {callActive && (
+                {callActive && !incomingCall && (
                     <div className="text-white bg-green-600 px-3 py-1 rounded text-sm mb-1">
                         Звонок с {remoteUserName || "Собеседником"}
                     </div>
