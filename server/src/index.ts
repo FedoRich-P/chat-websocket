@@ -165,43 +165,34 @@ io.on("connection", (socket: Socket) => {
     });
 
 // --- WebRTC signalling ---
-    socket.on("callUser", (payload: { userToCall?: string; signal?: any; from?: string; name?: string }) => {
-        const { userToCall, signal, name } = payload || {};
-        log(`[callUser] from=${socket.id} to=${userToCall}`);
-        if (!userToCall || !signal) {
-            return socket.emit("callError", { code: "invalid_payload", message: "Missing userToCall or signal" });
-        }
-        if (!io.sockets.sockets.has(userToCall)) {
-            return socket.emit("callError", { code: "target_not_found", message: "User not connected", to: userToCall });
-        }
-        io.to(userToCall).emit("incomingCall", { from: socket.id, signal, name: users.get(socket.id)?.name || name || "Anonymous" });
+    socket.on("callUser", (payload: { userToCall?: string; signal?: any; from?: string; type?: "audio" | "video" }) => {
+        const { userToCall, signal, type } = payload || {};
+        if (!userToCall || !signal || !type) return socket.emit("callError", { code: "invalid_payload" });
+        if (!io.sockets.sockets.has(userToCall)) return socket.emit("callError", { code: "target_not_found" });
+
+        io.to(userToCall).emit("incomingCall", { from: socket.id, signal, type });
     });
 
     socket.on("answerCall", (payload: { to?: string; signal?: any }) => {
         const { to, signal } = payload || {};
-        log(`[answerCall] from=${socket.id} to=${to}`);
-        if (!to || !signal) return socket.emit("callError", { code: "invalid_payload", message: "Missing 'to' or 'signal'" });
-        if (!io.sockets.sockets.has(to)) return socket.emit("callError", { code: "target_not_found", message: "User not connected", to });
+        if (!to || !signal) return socket.emit("callError", { code: "invalid_payload" });
+        if (!io.sockets.sockets.has(to)) return socket.emit("callError", { code: "target_not_found" });
+
         io.to(to).emit("callAccepted", signal);
     });
 
     socket.on("iceCandidate", (payload: { to?: string; candidate?: any }) => {
         const { to, candidate } = payload || {};
-        log(`[iceCandidate] from=${socket.id} to=${to} hasCandidate=${!!candidate}`);
-        if (!to || !candidate) return socket.emit("callError", { code: "invalid_payload", message: "Missing 'to' or 'candidate'" });
-        if (!io.sockets.sockets.has(to)) return socket.emit("callError", { code: "target_not_found", message: "User not connected", to });
+        if (!to || !candidate) return socket.emit("callError", { code: "invalid_payload" });
+        if (!io.sockets.sockets.has(to)) return socket.emit("callError", { code: "target_not_found" });
+
         io.to(to).emit("iceCandidate", candidate);
     });
 
     socket.on("endCall", (payload: { to?: string }) => {
         const to = payload?.to;
-        log(`[endCall] from=${socket.id} to=${to}`);
-        if (!to) return socket.emit("callError", { code: "invalid_payload", message: "Missing 'to'" });
-        if (!io.sockets.sockets.has(to)) {
-            // уведомляем вызывающего, что цель недоступна
-            return socket.emit("callEndedAck", { to });
-        }
-        io.to(to).emit("callEnded");
+        if (!to) return socket.emit("callError", { code: "invalid_payload" });
+        if (io.sockets.sockets.has(to)) io.to(to).emit("callEnded");
     });
 });
 
